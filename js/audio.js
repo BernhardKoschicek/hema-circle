@@ -101,6 +101,22 @@ class SoundEngine {
     }
 
     /**
+     * Distinct halfway chime (for partner / role rotation)
+     * Plays a crisp high double-strike (blade contact simulation)
+     */
+    playHalfwayBeep() {
+        if (this.isMuted) return;
+        this.init();
+        if (!this.ctx || !this.compressor) return;
+
+        const now = this.ctx.currentTime;
+        // Strike 1
+        this._playRichBuzzer(880.00, now, 0.1, 0.9);
+        // Strike 2
+        this._playRichBuzzer(1318.51, now + 0.12, 0.25, 1.0);
+    }
+
+    /**
      * High-energy phase transition signal (Work vs Rest)
      */
     playPhaseChangeBeep(phase = 'work') {

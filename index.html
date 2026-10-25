@@ -6,6 +6,15 @@
     <meta name="theme-color" content="#121316">
     <meta name="description" content="HEMA Circuit Timer - Precision interval & circuit training timer for HEMA, sparring, and fitness. Mobile & Laptop ready.">
     <title>HEMA Circuit Timer</title>
+
+    <!-- PWA & Mobile Web App Meta -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HEMA Timer">
     
     <!-- Google Fonts: Bebas Neue for giant timer digits, Inter for UI -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -75,6 +84,17 @@
                     </svg>
                 </button>
 
+                <!-- Quick Share Button -->
+                <button id="btn-quick-share" class="icon-btn" title="Training teilen" aria-label="Training teilen">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"></circle>
+                        <circle cx="6" cy="12" r="3"></circle>
+                        <circle cx="18" cy="19" r="3"></circle>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                    </svg>
+                </button>
+
                 <button id="btn-settings-toggle" class="icon-btn" title="Einstellungen" aria-label="Einstellungen ein-/ausblenden">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -95,6 +115,7 @@
             <!-- Huge Central Countdown -->
             <div class="timer-digits-wrapper" id="timer-wrapper">
                 <div id="display-time" class="timer-digits">02:00</div>
+                <div id="halfway-badge" class="halfway-badge hidden" data-i18n="halfwayNotice">⚔️ HALBZEIT</div>
                 <div id="warning-flash" class="warning-flash-overlay"></div>
             </div>
 
@@ -257,6 +278,13 @@
                                 <button type="button" id="btn-test-sound" class="btn btn-secondary btn-xs" data-i18n="btnTestSound">🔊 Test</button>
                             </div>
                         </div>
+
+                        <div class="option-field full-width">
+                            <label class="checkbox-label" style="width: 100%;">
+                                <input type="checkbox" id="chk-halfway-beep" checked>
+                                <span data-i18n="labelHalfwayBeep">Halbzeit-Signal (z. B. Rollen-/Partnerwechsel)</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -334,6 +362,46 @@
             </div>
         </section>
 
+        <!-- Session Complete & Share Modal -->
+        <div class="summary-modal" id="summary-modal" aria-hidden="true">
+            <div class="summary-card">
+                <div class="summary-header">
+                    <span class="summary-crown">⚔️</span>
+                    <h2 data-i18n="summaryTitle">Training Beendet!</h2>
+                    <p class="summary-sub" data-i18n="summarySub">Starke Leistung im Fechtsaal</p>
+                </div>
+
+                <div class="summary-stats-grid">
+                    <div class="summary-stat-box">
+                        <span class="stat-value" id="stat-rounds">0</span>
+                        <span class="stat-label" data-i18n="statRoundsLabel">Runden</span>
+                    </div>
+                    <div class="summary-stat-box">
+                        <span class="stat-value" id="stat-fight-time">00:00</span>
+                        <span class="stat-label" data-i18n="statFightTimeLabel">Reine Fechtzeit</span>
+                    </div>
+                    <div class="summary-stat-box">
+                        <span class="stat-value" id="stat-total-time">00:00</span>
+                        <span class="stat-label" data-i18n="statTotalTimeLabel">Gesamtdauer</span>
+                    </div>
+                </div>
+
+                <div class="summary-actions">
+                    <button type="button" id="btn-share-session" class="btn btn-primary btn-share">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        <span id="btn-share-text" data-i18n="btnShareSession">Training teilen</span>
+                    </button>
+                    <button type="button" id="btn-close-summary" class="btn btn-secondary" data-i18n="btnCloseSummary">Schließen</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Keyboard Shortcut Hint & Attribution Footer -->
         <footer class="app-footer">
             <span class="hotkey-hint" id="hotkey-hint">⌨️ <strong>Leertaste:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Vollbild | <strong>L:</strong> Sprache | <strong>T:</strong> Schema</span>
@@ -352,5 +420,16 @@
     <script src="js/wakelock.js"></script>
     <script src="js/timer.js"></script>
     <script src="js/app.js"></script>
+
+    <!-- Register Service Worker (PWA Offline) -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.warn('PWA Service Worker registration skipped:', err);
+          });
+        });
+      }
+    </script>
 </body>
 </html>

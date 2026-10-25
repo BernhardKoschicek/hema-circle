@@ -53,9 +53,12 @@ hema, interval-timer, circuit-training, sparring, martial-arts, workout-timer, g
   - **Reset**: Return to the initial configuration with one tap.
 - 📱 **Mobile & Sala Visibility**:
   - **Screen Wake Lock API**: Automatically prevents phone, tablet, and laptop screens from sleeping during sparring.
+  - **PWA Installation (Add to Home Screen)**: Progressive Web App with offline caching & custom longsword icons. Runs standalone without browser address bar on iOS & Android.
   - **Ultra-High Contrast Theme**: Scalable giant digits readable through fencing masks and from across the fencing hall.
   - **Landscape & Portrait Optimization**: Automatically adapts controls and digit layout.
-- 💾 **Automatic Persistence**: Remembers your preferred times, rounds, volume, and language in `localStorage`.
+- ⚔️ **Halbzeit-Signal (Halfway Chime)**: Distinct audio chime and visual banner at 50% of each active round (perfect for partner swap or attacker/defender role switch). Can be toggled in settings.
+- 🏆 **Session Summary & Share**: Summary screen tracking completed rounds, combat time, and total duration. 1-click sharing to WhatsApp or Discord via Web Share API or clipboard.
+- 💾 **Automatic Persistence**: Remembers your preferred times, rounds, volume, theme, and language in `localStorage`.
 
 ---
 

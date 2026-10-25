@@ -1096,6 +1096,147 @@ body[data-color-theme="rittersporn"] .brand-sub {
     color: #f472b6;
 }
 
+/* Halfway cue badge */
+.halfway-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    background: var(--bg-surface);
+    color: var(--color-work-gold);
+    border: 2px solid var(--color-work-gold);
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    z-index: 20;
+    pointer-events: none;
+    animation: halfwayPop 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes halfwayPop {
+    0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+    15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    25% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Training Session Summary Modal
+   -------------------------------------------------------------------------- */
+.summary-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.summary-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.summary-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
+    border-radius: 24px;
+    padding: 30px;
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    transform: scale(0.95);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.summary-modal.open .summary-card {
+    transform: scale(1);
+}
+
+.summary-crown {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.summary-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.summary-sub {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}
+
+.summary-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 26px;
+}
+
+.summary-stat-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 14px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-family: var(--font-timer);
+    font-size: 2.2rem;
+    color: var(--color-work-gold);
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+
+.summary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-share {
+    height: 52px;
+    background: var(--color-work-gold);
+    color: #000000;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+}
+
+.btn-share:hover {
+    filter: brightness(1.1);
+}
+
 /* Utility */
 .hidden {
     display: none !important;

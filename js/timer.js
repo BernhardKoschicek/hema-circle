@@ -9,7 +9,8 @@ class CircuitTimer {
             workSeconds: 120, // 2 minutes
             restSeconds: 30,  // 30 seconds
             prepSeconds: 5,   // 5 seconds get-ready
-            totalRounds: 0    // 0 = infinite / open-ended
+            totalRounds: 0,   // 0 = infinite / open-ended
+            halfwayBeep: true // Distinct signal at 50% of work phase
         };
 
         this.state = 'IDLE'; // IDLE, PREP, WORK, REST, PAUSED, COMPLETE
@@ -22,10 +23,19 @@ class CircuitTimer {
 
         this.intervalId = null;
         this.lastWarningSecond = -1;
+        this.hasFiredHalfway = false;
+
+        // Session Statistics
+        this.stats = {
+            completedRounds: 0,
+            totalWorkSeconds: 0,
+            sessionStartTime: 0
+        };
 
         // Callbacks
         this.onTick = null;          // ({ phase, remainingSeconds, totalSeconds, progress, round, totalRounds })
         this.onWarning = null;       // (secondsLeft)
+        this.onHalfway = null;       // (remainingSeconds)
         this.onPhaseChange = null;   // (newPhase, round)
         this.onComplete = null;      // ()
     }
@@ -35,6 +45,7 @@ class CircuitTimer {
         if (options.restSeconds !== undefined) this.config.restSeconds = Math.max(0, parseInt(options.restSeconds, 10));
         if (options.prepSeconds !== undefined) this.config.prepSeconds = Math.max(0, parseInt(options.prepSeconds, 10));
         if (options.totalRounds !== undefined) this.config.totalRounds = Math.max(0, parseInt(options.totalRounds, 10));
+        if (options.halfwayBeep !== undefined) this.config.halfwayBeep = !!options.halfwayBeep;
 
         if (this.state === 'IDLE') {
             this._notifyTick(this.config.workSeconds, this.config.workSeconds, 'IDLE');
@@ -46,6 +57,12 @@ class CircuitTimer {
 
         this.currentRound = 1;
         this.lastWarningSecond = -1;
+        this.hasFiredHalfway = false;
+        this.stats = {
+            completedRounds: 0,
+            totalWorkSeconds: 0,
+            sessionStartTime: Date.now()
+        };
 
         if (this.config.prepSeconds > 0) {
             this._enterPhase('PREP', this.config.prepSeconds);
@@ -140,6 +157,7 @@ class CircuitTimer {
         this.phaseTotalMs = durationSeconds * 1000;
         this.phaseEndTime = Date.now() + this.phaseTotalMs;
         this.lastWarningSecond = -1;
+        this.hasFiredHalfway = false;
 
         if (typeof this.onPhaseChange === 'function') {
             this.onPhaseChange(this.state, this.currentRound);
@@ -147,6 +165,9 @@ class CircuitTimer {
     }
 
     _advanceRoundOrFinish() {
+        this.stats.completedRounds++;
+        this.stats.totalWorkSeconds += this.config.workSeconds;
+
         if (this.config.totalRounds > 0 && this.currentRound >= this.config.totalRounds) {
             this._finish();
             return;
@@ -160,9 +181,20 @@ class CircuitTimer {
         this._stopLoop();
         this.state = 'COMPLETE';
         if (typeof this.onComplete === 'function') {
-            this.onComplete();
+            this.onComplete(this.getStats());
         }
         this._notifyTick(0, this.config.workSeconds, 'COMPLETE');
+    }
+
+    getStats() {
+        const totalElapsedSeconds = this.stats.sessionStartTime > 0 
+            ? Math.round((Date.now() - this.stats.sessionStartTime) / 1000)
+            : 0;
+        return {
+            completedRounds: this.stats.completedRounds,
+            totalWorkSeconds: this.stats.totalWorkSeconds,
+            totalElapsedSeconds: Math.max(this.stats.totalWorkSeconds, totalElapsedSeconds)
+        };
     }
 
     _startLoop() {
@@ -189,6 +221,17 @@ class CircuitTimer {
             this.lastWarningSecond = remainingSeconds;
             if (typeof this.onWarning === 'function') {
                 this.onWarning(remainingSeconds);
+            }
+        }
+
+        // Halfway cue (50% of work phase, for partner / role swap)
+        if (this.state === 'WORK' && this.config.halfwayBeep && !this.hasFiredHalfway && this.config.workSeconds >= 20) {
+            const halfwaySec = Math.floor(this.config.workSeconds / 2);
+            if (remainingSeconds === halfwaySec) {
+                this.hasFiredHalfway = true;
+                if (typeof this.onHalfway === 'function') {
+                    this.onHalfway(halfwaySec);
+                }
             }
         }
 

@@ -57,6 +57,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             titleSkip: 'Phase überspringen [Taste S]',
             titleLang: 'Sprache wechseln (Deutsch / English)',
             titleTheme: 'Farbschema wechseln [Taste T]',
+            titleQuickShare: 'Training teilen',
+            labelHalfwayBeep: 'Halbzeit-Signal (z. B. Rollen-/Partnerwechsel)',
+            halfwayNotice: '⚔️ HALBZEIT',
+            summaryTitle: 'Training Beendet!',
+            summarySub: 'Starke Leistung im Fechtsaal',
+            statRoundsLabel: 'Runden',
+            statFightTimeLabel: 'Reine Fechtzeit',
+            statTotalTimeLabel: 'Gesamtdauer',
+            btnShareSession: 'Training teilen',
+            btnCloseSummary: 'Schließen',
+            shareCopied: 'In Zwischenablage kopiert! 📋',
             spotifyTitle: 'Spotify Connector',
             spotifyNotConnected: 'Spotify verbinden',
             spotifyClickToConnect: 'Klicke für Training Sound',
@@ -120,6 +131,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             titleSkip: 'Skip Phase [Key S]',
             titleLang: 'Switch Language (English / Deutsch)',
             titleTheme: 'Switch Theme [Key T]',
+            titleQuickShare: 'Share Workout',
+            labelHalfwayBeep: 'Halfway chime (Role / partner swap)',
+            halfwayNotice: '⚔️ HALFWAY',
+            summaryTitle: 'Session Complete!',
+            summarySub: 'Great work in the sala',
+            statRoundsLabel: 'Rounds',
+            statFightTimeLabel: 'Combat Time',
+            statTotalTimeLabel: 'Total Duration',
+            btnShareSession: 'Share Workout',
+            btnCloseSummary: 'Close',
+            shareCopied: 'Copied to clipboard! 📋',
             spotifyTitle: 'Spotify Connector',
             spotifyNotConnected: 'Connect Spotify',
             spotifyClickToConnect: 'Click for Workout Audio',
@@ -220,6 +242,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const inputBeepVol = document.getElementById('input-beep-vol');
     const btnTestSound = document.getElementById('btn-test-sound');
+    const chkHalfwayBeep = document.getElementById('chk-halfway-beep');
+    const halfwayBadge = document.getElementById('halfway-badge');
+
+    // Summary Modal & Share Elements
+    const summaryModal = document.getElementById('summary-modal');
+    const statRounds = document.getElementById('stat-rounds');
+    const statFightTime = document.getElementById('stat-fight-time');
+    const statTotalTime = document.getElementById('stat-total-time');
+    const btnShareSession = document.getElementById('btn-share-session');
+    const btnShareText = document.getElementById('btn-share-text');
+    const btnCloseSummary = document.getElementById('btn-close-summary');
+    const btnQuickShare = document.getElementById('btn-quick-share');
 
     // Instances
     const timer = new CircuitTimer();
@@ -291,6 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Update button titles & aria-labels
         if (btnThemeToggle) btnThemeToggle.title = dict.titleTheme;
+        if (btnQuickShare) btnQuickShare.title = dict.titleQuickShare;
         if (btnLangToggle) btnLangToggle.title = dict.titleLang;
         if (btnSoundToggle) btnSoundToggle.title = dict.titleSound;
         if (btnFullscreen) btnFullscreen.title = dict.titleFullscreen;
@@ -344,6 +379,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     sound.setVolume(cfg.beepVol);
                     if (inputBeepVol) inputBeepVol.value = cfg.beepVol;
                 }
+                if (cfg.halfwayBeep !== undefined) {
+                    timer.config.halfwayBeep = cfg.halfwayBeep;
+                    if (chkHalfwayBeep) chkHalfwayBeep.checked = cfg.halfwayBeep;
+                }
             }
 
             // Sync Spotify Toggles & Duck Level
@@ -376,7 +415,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 prepSec: parseInt(inputPrepSec.value, 10) || 0,
                 rounds: parseInt(inputRounds.value, 10) || 0,
                 isMuted: sound.isMuted,
-                beepVol: sound.masterVolume
+                beepVol: sound.masterVolume,
+                halfwayBeep: chkHalfwayBeep ? chkHalfwayBeep.checked : true
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
         } catch (e) {
@@ -392,12 +432,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const restSec = (parseInt(inputRestMin.value, 10) || 0) * 60 + (parseInt(inputRestSec.value, 10) || 0);
         const prepSec = parseInt(inputPrepSec.value, 10) || 0;
         const totalRounds = parseInt(inputRounds.value, 10) || 0;
+        const halfwayBeep = chkHalfwayBeep ? chkHalfwayBeep.checked : true;
 
         timer.configure({
             workSeconds: Math.max(1, workSec),
             restSeconds: Math.max(0, restSec),
             prepSeconds: Math.max(0, prepSec),
-            totalRounds: Math.max(0, totalRounds)
+            totalRounds: Math.max(0, totalRounds),
+            halfwayBeep: halfwayBeep
         });
 
         // Save Spotify Settings
@@ -636,11 +678,78 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    timer.onComplete = () => {
+    timer.onHalfway = () => {
+        sound.playHalfwayBeep();
+        if (halfwayBadge) {
+            halfwayBadge.classList.remove('hidden');
+            setTimeout(() => {
+                halfwayBadge.classList.add('hidden');
+            }, 2200);
+        }
+    };
+
+    function openSummaryModal(stats) {
+        const finalStats = stats || timer.getStats();
+        if (statRounds) statRounds.textContent = finalStats.completedRounds;
+        if (statFightTime) statFightTime.textContent = formatTime(finalStats.totalWorkSeconds);
+        if (statTotalTime) statTotalTime.textContent = formatTime(finalStats.totalElapsedSeconds);
+
+        if (summaryModal) {
+            summaryModal.classList.add('open');
+            summaryModal.setAttribute('aria-hidden', 'false');
+        }
+    }
+
+    function closeSummaryModal() {
+        if (summaryModal) {
+            summaryModal.classList.remove('open');
+            summaryModal.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    async function shareSession() {
+        const stats = timer.getStats();
+        const dict = I18N[currentLang];
+        const rounds = stats.completedRounds;
+        const fightTime = formatTime(stats.totalWorkSeconds);
+        const totalTime = formatTime(stats.totalElapsedSeconds);
+        const shareUrl = window.location.origin + window.location.pathname;
+
+        const shareText = `⚔️ HEMA Rittersporn Training abgeschlossen!\n🔥 ${rounds} Runden absolviert (${fightTime} Min. reine Fechtzeit / ${totalTime} Gesamtdauer)\n⏱️ HEMA Circuit Timer: ${shareUrl}`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'HEMA Rittersporn Training',
+                    text: shareText,
+                    url: shareUrl
+                });
+                return;
+            } catch (e) {
+                // Fallback to clipboard
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(shareText);
+            if (btnShareText) {
+                const originalText = btnShareText.textContent;
+                btnShareText.textContent = dict.shareCopied;
+                setTimeout(() => {
+                    btnShareText.textContent = originalText;
+                }, 2500);
+            }
+        } catch (e) {
+            prompt('Training teilen (Text kopieren):', shareText);
+        }
+    }
+
+    timer.onComplete = (stats) => {
         displayTime.classList.remove('warning-pulse');
         sound.playPhaseChangeBeep('work');
         wakeLock.releaseLock();
         if (spotify) spotify.pause();
+        openSummaryModal(stats);
     };
 
     // -------------------------------------------------------------------------
@@ -837,6 +946,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnTestSound.addEventListener('click', () => {
             sound.init();
             sound.testBeep();
+        });
+    }
+
+    if (chkHalfwayBeep) {
+        chkHalfwayBeep.addEventListener('change', () => {
+            timer.config.halfwayBeep = chkHalfwayBeep.checked;
+            saveSettings();
+        });
+    }
+
+    // Share & Summary Modal Listeners
+    if (btnShareSession) {
+        btnShareSession.addEventListener('click', shareSession);
+    }
+
+    if (btnCloseSummary) {
+        btnCloseSummary.addEventListener('click', closeSummaryModal);
+    }
+
+    if (btnQuickShare) {
+        btnQuickShare.addEventListener('click', () => {
+            openSummaryModal();
         });
     }
 
