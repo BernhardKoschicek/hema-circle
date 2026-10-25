@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#121316">
+    <meta name="description" content="HEMA Zirkeltraining & Sparring Intervall-Timer für Laptop und Smartphone">
+    <title>HEMA Circuit Timer</title>
+    
+    <!-- Google Fonts: Bebas Neue for giant timer digits, Inter for UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-idle">
+
+    <div class="app-container">
+        <!-- Top Bar: Title, Sound & Fullscreen -->
+        <header class="app-header">
+            <div class="brand">
+                <svg class="brand-icon" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Crossed Longswords Icon -->
+                    <path d="M14.5 17.5L3 6V3h3l11.5 11.5"></path>
+                    <path d="M13 19l2 2"></path>
+                    <path d="M19 13l2 2"></path>
+                    <path d="M18 22l4-4"></path>
+                    <path d="M9.5 17.5L21 6V3h-3L6.5 14.5"></path>
+                    <path d="M11 19l-2 2"></path>
+                    <path d="M5 13l-2 2"></path>
+                    <path d="M6 22l-4-4"></path>
+                </svg>
+                <div class="brand-text">
+                    <span class="brand-title">HEMA TIMER</span>
+                    <span class="brand-sub">Fechtsaal Intervall</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button id="btn-sound-toggle" class="icon-btn" title="Ton umschalten" aria-label="Ton an/aus">
+                    <svg id="icon-sound-on" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    <svg id="icon-sound-off" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                        <line x1="23" y1="9" x2="17" y2="15"></line>
+                        <line x1="17" y1="9" x2="23" y2="15"></line>
+                    </svg>
+                </button>
+
+                <button id="btn-fullscreen" class="icon-btn" title="Vollbild" aria-label="Vollbildmodus">
+                    <svg id="icon-fs-enter" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                    </svg>
+                    <svg id="icon-fs-exit" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+                    </svg>
+                </button>
+
+                <button id="btn-settings-toggle" class="icon-btn" title="Einstellungen" aria-label="Einstellungen ein-/ausblenden">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Display Arena -->
+        <main class="timer-arena">
+            <!-- Phase Badge & Round Status -->
+            <div class="phase-meta">
+                <span id="display-phase" class="phase-badge">BEREIT</span>
+                <span id="display-round" class="round-badge">Runde 1</span>
+            </div>
+
+            <!-- Huge Central Countdown -->
+            <div class="timer-digits-wrapper" id="timer-wrapper">
+                <div id="display-time" class="timer-digits">02:00</div>
+                <div id="warning-flash" class="warning-flash-overlay"></div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar-fill"></div>
+            </div>
+
+            <!-- Next Phase Preview Indicator -->
+            <div class="next-phase-info" id="next-phase-info">
+                Nächste Phase: <strong id="next-phase-name">Pause (00:30)</strong>
+            </div>
+
+            <!-- Primary Control Buttons (Start / Pause, Skip, Reset) -->
+            <div class="controls-panel">
+                <button id="btn-reset" class="btn btn-secondary" title="Zurücksetzen [Taste R]" aria-label="Zurücksetzen">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                    </svg>
+                    <span>Reset</span>
+                </button>
+
+                <button id="btn-primary" class="btn btn-primary" title="Start / Pause [Leertaste]" aria-label="Starten oder Pausieren">
+                    <svg id="icon-play" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <svg id="icon-pause" class="hidden" viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                        <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                    </svg>
+                    <span id="btn-primary-text">START</span>
+                </button>
+
+                <button id="btn-skip" class="btn btn-secondary" title="Phase überspringen [Taste S]" aria-label="Phase überspringen">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="3" stroke-linecap="round"></line>
+                    </svg>
+                    <span>Skip</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Settings Drawer / Modal (Collapsible) -->
+        <section class="settings-drawer" id="settings-drawer" aria-labelledby="settings-heading">
+            <div class="settings-header">
+                <h2 id="settings-heading">Timer Einstellungen</h2>
+                <button id="btn-settings-close" class="icon-btn-close" aria-label="Einstellungen schließen">&times;</button>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="presets-row">
+                <span class="preset-label">HEMA Vorlagen:</span>
+                <div class="preset-buttons">
+                    <button type="button" class="btn-chip active" data-work-m="2" data-work-s="0" data-rest-m="0" data-rest-s="30">2m / 30s (Sparring)</button>
+                    <button type="button" class="btn-chip" data-work-m="1" data-work-s="0" data-rest-m="0" data-rest-s="15">1m / 15s (Drills)</button>
+                    <button type="button" class="btn-chip" data-work-m="0" data-work-s="30" data-rest-m="0" data-rest-s="15">30s / 15s (HIIT)</button>
+                    <button type="button" class="btn-chip" data-work-m="3" data-work-s="0" data-rest-m="1" data-rest-s="0">3m / 1m (Gefecht)</button>
+                </div>
+            </div>
+
+            <form id="timer-config-form" class="config-grid">
+                <!-- Aktiv / Work Time -->
+                <div class="input-card work-card">
+                    <label class="card-title">⚔️ Aktivphase (Runde)</label>
+                    <div class="time-input-group">
+                        <div class="time-field">
+                            <input type="number" id="input-work-min" min="0" max="59" value="2" inputmode="numeric">
+                            <span class="unit-label">Min</span>
+                        </div>
+                        <span class="time-separator">:</span>
+                        <div class="time-field">
+                            <input type="number" id="input-work-sec" min="0" max="59" step="5" value="00" inputmode="numeric">
+                            <span class="unit-label">Sek</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pause / Rest Time -->
+                <div class="input-card rest-card">
+                    <label class="card-title">🛡️ Pausephase</label>
+                    <div class="time-input-group">
+                        <div class="time-field">
+                            <input type="number" id="input-rest-min" min="0" max="59" value="0" inputmode="numeric">
+                            <span class="unit-label">Min</span>
+                        </div>
+                        <span class="time-separator">:</span>
+                        <div class="time-field">
+                            <input type="number" id="input-rest-sec" min="0" max="59" step="5" value="30" inputmode="numeric">
+                            <span class="unit-label">Sek</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prep & Rounds Options -->
+                <div class="input-card options-card">
+                    <label class="card-title">⚙️ Optionen</label>
+                    <div class="options-grid">
+                        <div class="option-field">
+                            <label for="input-prep-sec">Vorbereitungszeit</label>
+                            <div class="time-field small">
+                                <input type="number" id="input-prep-sec" min="0" max="60" value="5" inputmode="numeric">
+                                <span class="unit-label">Sek</span>
+                            </div>
+                        </div>
+
+                        <div class="option-field">
+                            <label for="input-rounds">Runden (0 = Endlos)</label>
+                            <div class="time-field small">
+                                <input type="number" id="input-rounds" min="0" max="99" value="0" inputmode="numeric">
+                                <span class="unit-label">Runden</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="settings-footer">
+                <button type="button" id="btn-apply-settings" class="btn btn-apply">Übernehmen & Schließen</button>
+            </div>
+        </section>
+
+        <!-- Keyboard Shortcut Hint / Info Footer -->
+        <footer class="app-footer">
+            <span class="hotkey-hint">⌨️ <strong>Leertaste:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Vollbild</span>
+            <span class="wakelock-status" id="wakelock-status">📱 Display aktiv</span>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/audio.js"></script>
+    <script src="js/wakelock.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
