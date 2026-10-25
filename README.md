@@ -155,9 +155,10 @@ The app features a **Hybrid Spotify Connector** using **OAuth 2.0 PKCE**:
 
 ### ⚙️ Spotify Developer Dashboard Setup:
 In your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) under your app's **Settings**:
-1. Add both **Redirect URIs**:
-   - For local testing: `http://localhost:8080/`
+1. Add the **Redirect URIs** (both with and without `index.html` for 100% PWA & browser compatibility):
    - For GitHub Pages: `https://bernhardkoschicek.github.io/hema-circle/`
+   - For GitHub Pages (PWA fallback): `https://bernhardkoschicek.github.io/hema-circle/index.html`
+   - For local testing: `http://localhost:8080/`
 2. Save changes.
 3. In the timer app settings drawer, click **"Mit Spotify verbinden" / "Connect Spotify"**!
 

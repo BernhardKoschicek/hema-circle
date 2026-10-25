@@ -73,8 +73,16 @@ class SpotifyManager {
     }
 
     getRedirectUri() {
-        // Automatically returns the exact current URL without query parameters or hash
-        return window.location.origin + window.location.pathname;
+        // Canonical redirect URI: always strip index.html and ensure clean directory path
+        // This ensures the URI is identical in both normal browser and installed PWA mode
+        let path = window.location.pathname;
+        if (path.endsWith('index.html')) {
+            path = path.slice(0, -'index.html'.length);
+        }
+        if (!path.endsWith('/')) {
+            path += '/';
+        }
+        return window.location.origin + path;
     }
 
     // -------------------------------------------------------------------------
@@ -91,8 +99,9 @@ class SpotifyManager {
         const challenge = await this._generateCodeChallenge(verifier);
         const state = this._generateRandomString(32);
 
-        sessionStorage.setItem('spotify_code_verifier', verifier);
-        sessionStorage.setItem('spotify_auth_state', state);
+        // Use localStorage so the verifier survives external app switches and PWA relaunches on mobile
+        localStorage.setItem('spotify_code_verifier', verifier);
+        localStorage.setItem('spotify_auth_state', state);
 
         const scopes = [
             'streaming',
@@ -141,29 +150,35 @@ class SpotifyManager {
         const state = urlParams.get('state');
         const error = urlParams.get('error');
 
-        if (error) {
-            console.error('Spotify Auth Error:', error);
+        const cleanUpAuthSession = () => {
+            localStorage.removeItem('spotify_code_verifier');
+            localStorage.removeItem('spotify_auth_state');
             sessionStorage.removeItem('spotify_code_verifier');
             sessionStorage.removeItem('spotify_auth_state');
+        };
+
+        if (error) {
+            console.error('Spotify Auth Error:', error);
+            cleanUpAuthSession();
             window.history.replaceState({}, document.title, window.location.pathname);
             return false;
         }
 
         if (code) {
-            const verifier = sessionStorage.getItem('spotify_code_verifier');
-            const savedState = sessionStorage.getItem('spotify_auth_state');
+            const verifier = localStorage.getItem('spotify_code_verifier') || sessionStorage.getItem('spotify_code_verifier');
+            const savedState = localStorage.getItem('spotify_auth_state') || sessionStorage.getItem('spotify_auth_state');
 
             // CSRF protection: state must match
             if (savedState && state !== savedState) {
                 console.error('Spotify Auth CSRF detected: state parameter mismatch');
-                sessionStorage.removeItem('spotify_code_verifier');
-                sessionStorage.removeItem('spotify_auth_state');
+                cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
                 return false;
             }
 
             if (!verifier) {
-                console.error('No code_verifier found in sessionStorage');
+                console.error('No code_verifier found in storage');
+                cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
                 return false;
             }
@@ -192,8 +207,7 @@ class SpotifyManager {
                 this.tokenExpiresAt = Date.now() + (data.expires_in * 1000);
 
                 this._saveStorage();
-                sessionStorage.removeItem('spotify_code_verifier');
-                sessionStorage.removeItem('spotify_auth_state');
+                cleanUpAuthSession();
 
                 // Clean URL from code parameter
                 window.history.replaceState({}, document.title, window.location.pathname);
@@ -202,6 +216,7 @@ class SpotifyManager {
                 return true;
             } catch (err) {
                 console.error('Error during token exchange:', err);
+                cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
                 return false;
             }
