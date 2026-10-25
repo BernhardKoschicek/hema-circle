@@ -1,27 +1,44 @@
 /**
  * HEMA Timer - Audio Engine (Web Audio API)
- * Synthesizes warning countdown beeps and phase-change chimes without external audio assets.
- * Zero latency, works offline, mobile compatible.
+ * Synthesizes high-impact, piercing countdown buzzers and resonant phase-change gongs.
+ * Features Dynamics Compression to cut cleanly through Spotify music and Fechtsaal echoes.
  */
 
 class SoundEngine {
     constructor() {
         this.ctx = null;
+        this.compressor = null;
+        this.masterGain = null;
         this.isMuted = false;
-        this.masterVolume = 0.8;
+        this.masterVolume = 1.0; // Max volume for gym environment
     }
 
     /**
-     * Initializes or resumes the AudioContext on user interaction.
-     * Required by iOS/Android browser autoplay policies.
+     * Initializes the AudioContext and Compressor graph on user interaction.
      */
     init() {
         if (!this.ctx) {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             if (AudioContextClass) {
                 this.ctx = new AudioContextClass();
+
+                // Master compressor to boost perceived loudness and prevent clipping
+                this.compressor = this.ctx.createDynamicsCompressor();
+                this.compressor.threshold.setValueAtTime(-14, this.ctx.currentTime);
+                this.compressor.knee.setValueAtTime(8, this.ctx.currentTime);
+                this.compressor.ratio.setValueAtTime(12, this.ctx.currentTime);
+                this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+                this.compressor.release.setValueAtTime(0.2, this.ctx.currentTime);
+
+                // Master Gain
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.setValueAtTime(this.masterVolume, this.ctx.currentTime);
+
+                this.compressor.connect(this.masterGain);
+                this.masterGain.connect(this.ctx.destination);
             }
         }
+
         if (this.ctx && this.ctx.state === 'suspended') {
             this.ctx.resume();
         }
@@ -33,79 +50,112 @@ class SoundEngine {
 
     setVolume(volume) {
         this.masterVolume = Math.max(0, Math.min(1, volume));
+        if (this.masterGain && this.ctx) {
+            this.masterGain.gain.setValueAtTime(this.masterVolume, this.ctx.currentTime);
+        }
     }
 
     /**
-     * Short warning beep (used at 5, 4, 3, 2, 1 seconds before phase end)
-     * Frequency: 880Hz (A5), Duration: 120ms
+     * Piercing countdown warning beep (5, 4, 3, 2, 1s before phase end)
+     * Dual-oscillator (fundamental + octave) with square/triangle mix.
+     * Cuts cleanly through Spotify music even at low volume!
      */
     playWarningBeep(secondsLeft = 5) {
         if (this.isMuted) return;
         this.init();
-        if (!this.ctx) return;
+        if (!this.ctx || !this.compressor) return;
 
         const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
+        const isFinalCountdown = secondsLeft <= 3;
+        const freq = isFinalCountdown ? 1046.50 : 880; // C6 or A5
+
+        // Oscillator 1: Triangle for body
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(freq, now);
+
+        // Oscillator 2: Square wave with lowpass filter for piercing presence (like a digital sports buzzer)
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(freq, now);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2800, now);
+
         const gain = this.ctx.createGain();
-
-        // Slightly higher pitch for the last 3 seconds
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(secondsLeft <= 3 ? 987.77 : 880, now); // B5 or A5
-
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(this.masterVolume * 0.7, now + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+        gain.gain.linearRampToValueAtTime(0.9, now + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        osc1.connect(gain);
+        osc2.connect(filter);
+        filter.connect(gain);
 
-        osc.start(now);
-        osc.stop(now + 0.14);
+        gain.connect(this.compressor);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.2);
+        osc2.stop(now + 0.2);
     }
 
     /**
-     * Distinct sound signal when a new phase starts.
-     * Plays a resonant dual-tone gong / horn.
+     * High-energy phase transition signal (Work vs Rest)
      */
     playPhaseChangeBeep(phase = 'work') {
         if (this.isMuted) return;
         this.init();
-        if (!this.ctx) return;
+        if (!this.ctx || !this.compressor) return;
 
         const now = this.ctx.currentTime;
 
         if (phase === 'work') {
-            // High triumphant chord for battle/work start (e.g. Major chord arpeggio)
-            this._playTone(523.25, now, 0.35, 0.8, 'triangle');       // C5
-            this._playTone(659.25, now + 0.08, 0.4, 0.8, 'triangle');  // E5
-            this._playTone(1046.50, now + 0.16, 0.65, 0.9, 'sine');    // C6
+            // Triumphant boxing horn / battle call
+            this._playRichBuzzer(587.33, now, 0.25, 1.0);        // D5
+            this._playRichBuzzer(880.00, now + 0.1, 0.25, 1.0);  // A5
+            this._playRichBuzzer(1174.66, now + 0.2, 0.6, 1.0);  // D6 (high ringing note)
         } else if (phase === 'rest') {
-            // Calm, low resonant gong for recovery/rest
-            this._playTone(440.00, now, 0.3, 0.7, 'sine');            // A4
-            this._playTone(329.63, now + 0.12, 0.7, 0.8, 'triangle');  // E4
+            // Lower, calm recovery gong with long warm chime
+            this._playRichBuzzer(523.25, now, 0.3, 0.9);         // C5
+            this._playRichBuzzer(392.00, now + 0.15, 0.7, 0.9);  // G4
         } else {
-            // General bell / prep
-            this._playTone(880, now, 0.4, 0.8, 'sine');
+            // Generic chime
+            this._playRichBuzzer(880.00, now, 0.4, 0.9);
         }
     }
 
-    _playTone(frequency, startTime, duration, volumeFactor = 1, type = 'sine') {
+    _playRichBuzzer(frequency, startTime, duration, volume = 1.0) {
         const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc.type = type;
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(frequency, startTime);
 
-        const targetVol = this.masterVolume * volumeFactor;
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(frequency / 2, startTime); // sub-bass weight
+
         gain.gain.setValueAtTime(0.0001, startTime);
-        gain.gain.linearRampToValueAtTime(targetVol, startTime + 0.02);
+        gain.gain.linearRampToValueAtTime(volume * 0.9, startTime + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        sub.connect(gain);
+        gain.connect(this.compressor);
 
         osc.start(startTime);
+        sub.start(startTime);
         osc.stop(startTime + duration + 0.05);
+        sub.stop(startTime + duration + 0.05);
+    }
+
+    /**
+     * Test beep for volume verification in settings
+     */
+    testBeep() {
+        this.init();
+        this.playWarningBeep(1);
     }
 }
 

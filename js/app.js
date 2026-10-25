@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             labelPrep: 'Vorbereitungszeit',
             labelRounds: 'Runden (0 = Endlos)',
             unitRounds: 'Runden',
+            labelBeepVol: 'Signalton Lautstärke',
+            btnTestSound: '🔊 Test',
             btnApply: 'Übernehmen & Schließen',
             hotkeyHint: '⌨️ <strong>Leertaste:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Vollbild | <strong>L:</strong> Sprache | <strong>T:</strong> Schema',
             wakelockActive: '📱 Display aktiv',
@@ -63,6 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             spotifyConnected: 'Verbunden',
             spotifyDisconnected: 'Getrennt',
             spotifyDeviceLabel: 'Ausgabegerät (Spotify Connect):',
+            spotifyDuckLevelLabel: 'Musik-Lautstärke beim Countdown (Ducking):',
             spotifySyncToggle: 'Musik mit Timer synchronisieren (Start/Pause)',
             spotifyPauseRestToggle: 'Musik in der Pausephase pausieren',
             spotifyDuckToggle: 'Auto-Ducking (Musik leiser bei 5s Countdown)',
@@ -105,6 +108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             labelPrep: 'Preparation Time',
             labelRounds: 'Rounds (0 = Infinite)',
             unitRounds: 'Rounds',
+            labelBeepVol: 'Beep Signal Volume',
+            btnTestSound: '🔊 Test',
             btnApply: 'Apply & Close',
             hotkeyHint: '⌨️ <strong>Space:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Fullscreen | <strong>L:</strong> Language | <strong>T:</strong> Theme',
             wakelockActive: '📱 Screen awake',
@@ -123,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             spotifyConnected: 'Connected',
             spotifyDisconnected: 'Disconnected',
             spotifyDeviceLabel: 'Playback Device (Spotify Connect):',
+            spotifyDuckLevelLabel: 'Music volume on countdown (Ducking):',
             spotifySyncToggle: 'Sync music with timer (Play/Pause)',
             spotifyPauseRestToggle: 'Pause music during rest phase',
             spotifyDuckToggle: 'Auto-Ducking (Lower music on 5s countdown)',
@@ -209,7 +215,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chkSpotifySync = document.getElementById('chk-spotify-sync');
     const chkSpotifyPauseRest = document.getElementById('chk-spotify-pause-rest');
     const chkSpotifyDuck = document.getElementById('chk-spotify-duck');
+    const selectDuckLevel = document.getElementById('select-duck-level');
     const spotifyRedirectUriText = document.getElementById('spotify-redirect-uri-text');
+
+    const inputBeepVol = document.getElementById('input-beep-vol');
+    const btnTestSound = document.getElementById('btn-test-sound');
 
     // Instances
     const timer = new CircuitTimer();
@@ -330,9 +340,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (cfg.isMuted !== undefined) {
                     setSoundMuted(cfg.isMuted);
                 }
+                if (cfg.beepVol !== undefined) {
+                    sound.setVolume(cfg.beepVol);
+                    if (inputBeepVol) inputBeepVol.value = cfg.beepVol;
+                }
             }
 
-            // Sync Spotify Toggles
+            // Sync Spotify Toggles & Duck Level
             if (spotify) {
                 if (inputSpotifyClientId && spotify.clientId) {
                     inputSpotifyClientId.value = spotify.clientId;
@@ -340,6 +354,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (chkSpotifySync) chkSpotifySync.checked = spotify.settings.syncWithTimer;
                 if (chkSpotifyPauseRest) chkSpotifyPauseRest.checked = spotify.settings.pauseOnRest;
                 if (chkSpotifyDuck) chkSpotifyDuck.checked = spotify.settings.duckOnWarning;
+
+                const savedDuckLevel = localStorage.getItem('hema_spotify_duck_level');
+                if (savedDuckLevel !== null) {
+                    spotify.duckedVolume = parseFloat(savedDuckLevel);
+                    if (selectDuckLevel) selectDuckLevel.value = savedDuckLevel;
+                }
             }
         } catch (e) {
             console.warn('Could not load settings from localStorage', e);
@@ -355,7 +375,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 restSec: parseInt(inputRestSec.value, 10) || 0,
                 prepSec: parseInt(inputPrepSec.value, 10) || 0,
                 rounds: parseInt(inputRounds.value, 10) || 0,
-                isMuted: sound.isMuted
+                isMuted: sound.isMuted,
+                beepVol: sound.masterVolume
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
         } catch (e) {
@@ -793,6 +814,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         selectSpotifyDevice.addEventListener('change', () => {
             spotify.selectedDeviceId = selectSpotifyDevice.value;
             spotify._saveStorage();
+        });
+    }
+
+    if (selectDuckLevel) {
+        selectDuckLevel.addEventListener('change', () => {
+            spotify.duckedVolume = parseFloat(selectDuckLevel.value);
+            localStorage.setItem('hema_spotify_duck_level', selectDuckLevel.value);
+        });
+    }
+
+    // Sound Volume & Test Button
+    if (inputBeepVol) {
+        inputBeepVol.addEventListener('input', (e) => {
+            const vol = parseFloat(e.target.value);
+            sound.setVolume(vol);
+            saveSettings();
+        });
+    }
+
+    if (btnTestSound) {
+        btnTestSound.addEventListener('click', () => {
+            sound.init();
+            sound.testBeep();
         });
     }
 

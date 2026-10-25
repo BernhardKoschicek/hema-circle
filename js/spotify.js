@@ -18,7 +18,7 @@ class SpotifyManager {
         this.currentTrack = null;
         this.isPlaying = false;
         this.normalVolume = 0.8;
-        this.duckedVolume = 0.2;
+        this.duckedVolume = 0.08; // 8% volume so countdown beeps cut through cleanly
         this.isDucked = false;
 
         // Settings
