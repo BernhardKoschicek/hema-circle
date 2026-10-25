@@ -1,5 +1,6 @@
 # HEMA Circuit Timer ⚔️🛡️
 
+[![Version: 0.2.0](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/bkoschicek/hema-circle)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub%20Pages-blue.svg)](https://pages.github.com/)
 [![Built with Google Gemini](https://img.shields.io/badge/Built%20with-Google%20Gemini-4285F4.svg)](https://deepmind.google/technologies/gemini/)
