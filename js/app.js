@@ -1,9 +1,9 @@
 /**
  * HEMA Timer - Main Application Controller
- * Handles UI interactions, state synchronization, events, shortcuts, i18n, themes & persistence.
+ * Handles UI interactions, state synchronization, events, shortcuts, i18n, themes, Spotify & persistence.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // -------------------------------------------------------------------------
     // Translations Dictionary (i18n)
     // -------------------------------------------------------------------------
@@ -54,7 +54,19 @@ document.addEventListener('DOMContentLoaded', () => {
             titleReset: 'Zurücksetzen [Taste R]',
             titleSkip: 'Phase überspringen [Taste S]',
             titleLang: 'Sprache wechseln (Deutsch / English)',
-            titleTheme: 'Farbschema wechseln [Taste T]'
+            titleTheme: 'Farbschema wechseln [Taste T]',
+            spotifyTitle: 'Spotify Connector',
+            spotifyNotConnected: 'Spotify verbinden',
+            spotifyClickToConnect: 'Klicke für Training Sound',
+            btnSpotifyConnect: 'Mit Spotify verbinden',
+            btnSpotifyDisconnect: 'Trennen',
+            spotifyConnected: 'Verbunden',
+            spotifyDisconnected: 'Getrennt',
+            spotifyDeviceLabel: 'Ausgabegerät (Spotify Connect):',
+            spotifySyncToggle: 'Musik mit Timer synchronisieren (Start/Pause)',
+            spotifyPauseRestToggle: 'Musik in der Pausephase pausieren',
+            spotifyDuckToggle: 'Auto-Ducking (Musik leiser bei 5s Countdown)',
+            spotifyRedirectHint: 'Redirect URI für dein Spotify Dashboard:'
         },
         en: {
             brandTitle: 'HEMA TIMER',
@@ -102,7 +114,19 @@ document.addEventListener('DOMContentLoaded', () => {
             titleReset: 'Reset [Key R]',
             titleSkip: 'Skip Phase [Key S]',
             titleLang: 'Switch Language (English / Deutsch)',
-            titleTheme: 'Switch Theme [Key T]'
+            titleTheme: 'Switch Theme [Key T]',
+            spotifyTitle: 'Spotify Connector',
+            spotifyNotConnected: 'Connect Spotify',
+            spotifyClickToConnect: 'Click for Workout Audio',
+            btnSpotifyConnect: 'Connect with Spotify',
+            btnSpotifyDisconnect: 'Disconnect',
+            spotifyConnected: 'Connected',
+            spotifyDisconnected: 'Disconnected',
+            spotifyDeviceLabel: 'Playback Device (Spotify Connect):',
+            spotifySyncToggle: 'Sync music with timer (Play/Pause)',
+            spotifyPauseRestToggle: 'Pause music during rest phase',
+            spotifyDuckToggle: 'Auto-Ducking (Lower music on 5s countdown)',
+            spotifyRedirectHint: 'Redirect URI for your Spotify Dashboard:'
         }
     };
 
@@ -119,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let currentTheme = 'iron';
 
-    // DOM Elements
+    // DOM Elements: Main Timer
     const body = document.body;
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     const displayTime = document.getElementById('display-time');
@@ -166,10 +190,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputPrepSec = document.getElementById('input-prep-sec');
     const inputRounds = document.getElementById('input-rounds');
 
+    // DOM Elements: Spotify
+    const spotifyWidget = document.getElementById('spotify-widget');
+    const spotifyWidgetInfo = document.getElementById('spotify-widget-info');
+    const spotifyTrackTitle = document.getElementById('spotify-track-title');
+    const spotifyTrackArtist = document.getElementById('spotify-track-artist');
+    const btnSpotifyToggle = document.getElementById('btn-spotify-toggle');
+    const iconSpotifyPlay = document.getElementById('icon-spotify-play');
+    const iconSpotifyPause = document.getElementById('icon-spotify-pause');
+    const btnSpotifyNext = document.getElementById('btn-spotify-next');
+
+    const spotifyStatusBadge = document.getElementById('spotify-status-badge');
+    const inputSpotifyClientId = document.getElementById('input-spotify-client-id');
+    const btnSpotifyConnect = document.getElementById('btn-spotify-connect');
+    const btnSpotifyDisconnect = document.getElementById('btn-spotify-disconnect');
+    const spotifyDeviceBox = document.getElementById('spotify-device-box');
+    const selectSpotifyDevice = document.getElementById('select-spotify-device');
+    const chkSpotifySync = document.getElementById('chk-spotify-sync');
+    const chkSpotifyPauseRest = document.getElementById('chk-spotify-pause-rest');
+    const chkSpotifyDuck = document.getElementById('chk-spotify-duck');
+    const spotifyRedirectUriText = document.getElementById('spotify-redirect-uri-text');
+
     // Instances
     const timer = new CircuitTimer();
     const sound = window.soundEngine;
     const wakeLock = window.wakeLockManager;
+    const spotify = window.spotifyManager;
 
     // Local Storage Keys
     const STORAGE_KEY = 'hema_circuit_timer_cfg';
@@ -248,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTheme(timer.state, timer.previousState);
         updateNextPhasePreview();
         updateRoundDisplay(timer.currentRound, timer.config.totalRounds);
+        updateSpotifyUI();
 
         try {
             localStorage.setItem(LANG_STORAGE_KEY, currentLang);
@@ -283,6 +330,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (cfg.isMuted !== undefined) {
                     setSoundMuted(cfg.isMuted);
                 }
+            }
+
+            // Sync Spotify Toggles
+            if (spotify) {
+                if (inputSpotifyClientId && spotify.clientId) {
+                    inputSpotifyClientId.value = spotify.clientId;
+                }
+                if (chkSpotifySync) chkSpotifySync.checked = spotify.settings.syncWithTimer;
+                if (chkSpotifyPauseRest) chkSpotifyPauseRest.checked = spotify.settings.pauseOnRest;
+                if (chkSpotifyDuck) chkSpotifyDuck.checked = spotify.settings.duckOnWarning;
             }
         } catch (e) {
             console.warn('Could not load settings from localStorage', e);
@@ -321,6 +378,15 @@ document.addEventListener('DOMContentLoaded', () => {
             prepSeconds: Math.max(0, prepSec),
             totalRounds: Math.max(0, totalRounds)
         });
+
+        // Save Spotify Settings
+        if (spotify) {
+            if (inputSpotifyClientId) spotify.setClientId(inputSpotifyClientId.value);
+            if (chkSpotifySync) spotify.settings.syncWithTimer = chkSpotifySync.checked;
+            if (chkSpotifyPauseRest) spotify.settings.pauseOnRest = chkSpotifyPauseRest.checked;
+            if (chkSpotifyDuck) spotify.settings.duckOnWarning = chkSpotifyDuck.checked;
+            spotify._saveStorage();
+        }
 
         saveSettings();
         updateNextPhasePreview();
@@ -375,7 +441,6 @@ document.addEventListener('DOMContentLoaded', () => {
      * Update UI theme styling and phase label according to current phase
      */
     function updateTheme(phase, subPhase) {
-        // Keep data-color-theme intact on body, only adjust class
         body.className = '';
         const dict = I18N[currentLang];
 
@@ -423,6 +488,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
+    // Spotify UI Synchronization
+    // -------------------------------------------------------------------------
+    function updateSpotifyUI() {
+        if (!spotify) return;
+
+        const dict = I18N[currentLang];
+        const isConnected = !!spotify.token;
+
+        if (isConnected) {
+            spotifyStatusBadge.className = 'badge-connected';
+            const userName = spotify.userProfile ? spotify.userProfile.display_name : '';
+            spotifyStatusBadge.textContent = userName ? `${dict.spotifyConnected}: ${userName}` : dict.spotifyConnected;
+
+            btnSpotifyConnect.classList.add('hidden');
+            btnSpotifyDisconnect.classList.remove('hidden');
+            spotifyDeviceBox.classList.remove('hidden');
+
+            // Update mini-bar widget
+            if (spotify.currentTrack) {
+                spotifyTrackTitle.textContent = spotify.currentTrack.title;
+                spotifyTrackArtist.textContent = spotify.currentTrack.artist;
+            } else {
+                spotifyTrackTitle.textContent = 'Spotify bereit';
+                spotifyTrackArtist.textContent = 'Starte Wiedergabe oder Timer';
+            }
+
+            // Update Play/Pause button icons
+            if (spotify.isPlaying) {
+                iconSpotifyPlay.classList.add('hidden');
+                iconSpotifyPause.classList.remove('hidden');
+            } else {
+                iconSpotifyPlay.classList.remove('hidden');
+                iconSpotifyPause.classList.add('hidden');
+            }
+
+            // Populate Device List
+            if (spotify.devices && spotify.devices.length > 0) {
+                selectSpotifyDevice.innerHTML = '';
+                spotify.devices.forEach(dev => {
+                    const opt = document.createElement('option');
+                    opt.value = dev.id;
+                    opt.textContent = `${dev.name} (${dev.type})${dev.is_active ? ' • Aktiv' : ''}`;
+                    if (dev.id === spotify.selectedDeviceId) {
+                        opt.selected = true;
+                    }
+                    selectSpotifyDevice.appendChild(opt);
+                });
+            }
+        } else {
+            spotifyStatusBadge.className = 'badge-disconnected';
+            spotifyStatusBadge.textContent = dict.spotifyDisconnected;
+
+            btnSpotifyConnect.classList.remove('hidden');
+            btnSpotifyDisconnect.classList.add('hidden');
+            spotifyDeviceBox.classList.add('hidden');
+
+            spotifyTrackTitle.textContent = dict.spotifyNotConnected;
+            spotifyTrackArtist.textContent = dict.spotifyClickToConnect;
+
+            iconSpotifyPlay.classList.remove('hidden');
+            iconSpotifyPause.classList.add('hidden');
+        }
+
+        // Show current redirect URI
+        if (spotifyRedirectUriText) {
+            spotifyRedirectUriText.textContent = spotify.getRedirectUri();
+        }
+    }
+
+    if (spotify) {
+        spotify.onStateChange = () => {
+            updateSpotifyUI();
+        };
+    }
+
+    // -------------------------------------------------------------------------
     // Timer Engine Callbacks
     // -------------------------------------------------------------------------
     timer.onTick = ({ phase, subPhase, remainingSeconds, totalSeconds, progress, round, totalRounds }) => {
@@ -441,8 +582,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     timer.onWarning = (secondsLeft) => {
-        // Trigger beep sound
+        // Trigger synth warning sound
         sound.playWarningBeep(secondsLeft);
+
+        // Spotify Auto-Ducking (dims volume 5 seconds before phase end)
+        if (spotify) {
+            spotify.onWarningCountdown(secondsLeft);
+        }
 
         // Visual flash & pulse effect
         displayTime.classList.add('warning-pulse');
@@ -462,12 +608,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (newPhase === 'PREP') {
             sound.playPhaseChangeBeep('prep');
         }
+
+        // Sync Spotify playback with new phase
+        if (spotify) {
+            spotify.onPhaseStarted(newPhase);
+        }
     };
 
     timer.onComplete = () => {
         displayTime.classList.remove('warning-pulse');
-        sound.playPhaseChangeBeep('work'); // Celebration chime
+        sound.playPhaseChangeBeep('work');
         wakeLock.releaseLock();
+        if (spotify) spotify.pause();
     };
 
     // -------------------------------------------------------------------------
@@ -482,8 +634,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (timer.state === 'PAUSED') {
             wakeLock.requestLock();
             timer.resume();
+            if (spotify) spotify.onTimerResumed();
         } else if (timer.state === 'WORK' || timer.state === 'REST' || timer.state === 'PREP') {
             timer.pause();
+            if (spotify) spotify.onTimerPaused();
         } else if (timer.state === 'COMPLETE') {
             timer.reset();
             wakeLock.requestLock();
@@ -499,6 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleReset() {
         timer.reset();
         wakeLock.releaseLock();
+        if (spotify) spotify.pause();
         displayTime.classList.remove('warning-pulse');
         warningFlash.classList.remove('active');
     }
@@ -538,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Event Listeners: Buttons
+    // Event Listeners: Buttons & Spotify
     // -------------------------------------------------------------------------
     btnPrimary.addEventListener('click', handlePrimaryAction);
     btnSkip.addEventListener('click', handleSkip);
@@ -571,6 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings Drawer
     function openSettings() {
         settingsDrawer.classList.add('open');
+        if (spotify) spotify.refreshDevices();
     }
 
     function closeSettings() {
@@ -588,6 +744,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnSettingsClose.addEventListener('click', closeSettings);
     btnApplySettings.addEventListener('click', closeSettings);
+
+    // Spotify Controls
+    if (spotifyWidgetInfo) {
+        spotifyWidgetInfo.addEventListener('click', () => {
+            if (!spotify.token) {
+                openSettings();
+            }
+        });
+    }
+
+    if (btnSpotifyToggle) {
+        btnSpotifyToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (spotify.token) {
+                spotify.togglePlayPause();
+            } else {
+                openSettings();
+            }
+        });
+    }
+
+    if (btnSpotifyNext) {
+        btnSpotifyNext.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (spotify.token) {
+                spotify.nextTrack();
+            }
+        });
+    }
+
+    if (btnSpotifyConnect) {
+        btnSpotifyConnect.addEventListener('click', () => {
+            if (inputSpotifyClientId && inputSpotifyClientId.value) {
+                spotify.setClientId(inputSpotifyClientId.value);
+            }
+            spotify.login();
+        });
+    }
+
+    if (btnSpotifyDisconnect) {
+        btnSpotifyDisconnect.addEventListener('click', () => {
+            spotify.logout();
+        });
+    }
+
+    if (selectSpotifyDevice) {
+        selectSpotifyDevice.addEventListener('change', () => {
+            spotify.selectedDeviceId = selectSpotifyDevice.value;
+            spotify._saveStorage();
+        });
+    }
 
     // Preset Chips
     presetChips.forEach(chip => {
@@ -663,9 +870,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initialize application
+    // -------------------------------------------------------------------------
+    // Initialization
+    // -------------------------------------------------------------------------
     loadSavedSettings();
     setColorTheme(currentTheme);
     setLanguage(currentLang);
     applyConfiguration();
+
+    // Check if returning from Spotify OAuth redirect
+    if (spotify) {
+        const returnedFromAuth = await spotify.handleAuthRedirect();
+        if (!returnedFromAuth && spotify.token) {
+            spotify.init();
+        }
+        updateSpotifyUI();
+    }
 });

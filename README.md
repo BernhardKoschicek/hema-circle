@@ -125,6 +125,7 @@ hema-circle/
 │   └── style.css       # High-contrast martial theme, clamp() typography, mobile styling
 ├── js/
 │   ├── audio.js        # Web Audio API sound synthesizer (beeps & resonant chimes)
+│   ├── spotify.js      # Spotify OAuth PKCE, Web Playback SDK & Connect Controller
 │   ├── timer.js        # Drift-free timestamp-based interval state machine
 │   ├── wakelock.js     # Screen Wake Lock controller for sleep prevention
 │   └── app.js          # Main app logic, keyboard bindings, i18n engine & persistence
@@ -135,12 +136,26 @@ hema-circle/
 
 ---
 
-## 🎵 Spotify Integration (Roadmap)
+## 🎵 Spotify Integration (Live)
 
-Future iterations can introduce background soundtrack synchronization:
-- **Client-Side OAuth (PKCE)**: Direct Spotify account login on GitHub Pages without server architecture.
-- **Spotify Web Playback SDK**: Play training playlists directly inside the browser tab (requires an active Spotify Premium account).
-- **Auto-Ducking**: Lower music volume during the 5-second countdown and rest periods, and crank up the energy during active rounds.
+The app features a **Hybrid Spotify Connector** using **OAuth 2.0 PKCE**:
+
+- 🎛️ **Dual Engine Support**:
+  - **In-Browser Web Playback SDK**: Streams audio directly inside the timer tab (ideal for laptops & computers).
+  - **Spotify Connect API**: Controls an existing active Spotify app running on your phone, laptop, or hall sound system.
+  - Automatically lists all your active Spotify devices in a dropdown menu.
+- ⚡ **Smart Sparring Audio Sync**:
+  - **Auto-Play / Pause**: Starts music when the round starts, pauses when the round ends or when the timer is paused.
+  - **Auto-Ducking**: 5 seconds before the end of a round, music volume is automatically ducked to ~20% so the countdown beeps and gong are loud and clear.
+- 🔒 **Zero-Backend Security (PKCE)**: Uses client-side PKCE authentication with Spotify's official token endpoint. No secret keys stored in code.
+
+### ⚙️ Spotify Developer Dashboard Setup:
+In your [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) under your app's **Settings**:
+1. Add both **Redirect URIs**:
+   - For local testing: `http://localhost:8080/`
+   - For GitHub Pages: `https://bernhardkoschicek.github.io/hema-circle/`
+2. Save changes.
+3. In the timer app settings drawer, click **"Mit Spotify verbinden" / "Connect Spotify"**!
 
 ---
 
