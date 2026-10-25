@@ -89,12 +89,13 @@ class SpotifyManager {
 
         const verifier = this._generateRandomString(64);
         const challenge = await this._generateCodeChallenge(verifier);
+        const state = this._generateRandomString(32);
 
         sessionStorage.setItem('spotify_code_verifier', verifier);
+        sessionStorage.setItem('spotify_auth_state', state);
 
         const scopes = [
             'streaming',
-            'user-read-email',
             'user-read-private',
             'user-read-playback-state',
             'user-modify-playback-state',
@@ -106,6 +107,7 @@ class SpotifyManager {
             response_type: 'code',
             redirect_uri: this.getRedirectUri(),
             scope: scopes,
+            state: state,
             code_challenge_method: 'S256',
             code_challenge: challenge
         });
@@ -136,18 +138,33 @@ class SpotifyManager {
     async handleAuthRedirect() {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
+        const state = urlParams.get('state');
         const error = urlParams.get('error');
 
         if (error) {
             console.error('Spotify Auth Error:', error);
+            sessionStorage.removeItem('spotify_code_verifier');
+            sessionStorage.removeItem('spotify_auth_state');
             window.history.replaceState({}, document.title, window.location.pathname);
             return false;
         }
 
         if (code) {
             const verifier = sessionStorage.getItem('spotify_code_verifier');
+            const savedState = sessionStorage.getItem('spotify_auth_state');
+
+            // CSRF protection: state must match
+            if (savedState && state !== savedState) {
+                console.error('Spotify Auth CSRF detected: state parameter mismatch');
+                sessionStorage.removeItem('spotify_code_verifier');
+                sessionStorage.removeItem('spotify_auth_state');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return false;
+            }
+
             if (!verifier) {
                 console.error('No code_verifier found in sessionStorage');
+                window.history.replaceState({}, document.title, window.location.pathname);
                 return false;
             }
 
@@ -176,6 +193,7 @@ class SpotifyManager {
 
                 this._saveStorage();
                 sessionStorage.removeItem('spotify_code_verifier');
+                sessionStorage.removeItem('spotify_auth_state');
 
                 // Clean URL from code parameter
                 window.history.replaceState({}, document.title, window.location.pathname);
