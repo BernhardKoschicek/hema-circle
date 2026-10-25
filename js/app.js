@@ -395,9 +395,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (chkSpotifyDuck) chkSpotifyDuck.checked = spotify.settings.duckOnWarning;
 
                 const savedDuckLevel = localStorage.getItem('hema_spotify_duck_level');
-                if (savedDuckLevel !== null) {
+                if (savedDuckLevel !== null && ['0.50', '0.25', '0.15'].includes(savedDuckLevel)) {
                     spotify.duckedVolume = parseFloat(savedDuckLevel);
                     if (selectDuckLevel) selectDuckLevel.value = savedDuckLevel;
+                } else {
+                    spotify.duckedVolume = 0.25;
+                    if (selectDuckLevel) selectDuckLevel.value = '0.25';
                 }
             }
         } catch (e) {
