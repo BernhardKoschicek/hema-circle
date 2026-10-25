@@ -4,7 +4,17 @@
    ========================================================================== */
 
 :root {
-    /* Color Palette */
+    /* Base Typography & Safe Area */
+    --font-timer: 'Bebas Neue', Impact, 'Arial Black', sans-serif;
+    --font-heading: 'Cinzel', serif, Georgia;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    --sat: env(safe-area-inset-top, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+
+    /* Default (Iron / Fechtsaal Dark) Fallbacks */
     --bg-main: #0e1014;
     --bg-surface: #171a21;
     --bg-card: #20242e;
@@ -12,45 +22,109 @@
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
+    --bg-radial-inner: #171a22;
+    --brand-icon-color: #f59e0b;
 
-    /* Theme Accents */
     --color-idle: #e2e8f0;
     --color-idle-accent: #64748b;
     --color-prep: #f59e0b;
     --color-prep-glow: rgba(245, 158, 11, 0.25);
-    
-    /* Active / Fight Phase: Fiery Forge Amber & Crimson */
     --color-work: #ef4444;
     --color-work-gold: #f59e0b;
     --color-work-glow: rgba(239, 68, 68, 0.28);
-
-    /* Rest / Recovery Phase: Shield Emerald & Blade Teal */
     --color-rest: #10b981;
     --color-rest-glow: rgba(16, 185, 129, 0.25);
-
-    /* Paused: Icy Blue Steel */
     --color-pause: #38bdf8;
     --color-pause-glow: rgba(56, 189, 248, 0.25);
 
-    /* Active theme variables (overridden by phase classes on body) */
     --current-accent: var(--color-idle-accent);
     --current-glow: transparent;
+}
 
-    /* Typography */
-    --font-timer: 'Bebas Neue', Impact, 'Arial Black', sans-serif;
-    --font-heading: 'Cinzel', serif, Georgia;
-    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+/* --------------------------------------------------------------------------
+   Color Theme 1: Fechtsaal (Iron Slate Dark - Standard)
+   -------------------------------------------------------------------------- */
+body[data-color-theme="iron"] {
+    --bg-main: #0e1014;
+    --bg-surface: #171a21;
+    --bg-card: #20242e;
+    --border-color: #2e3442;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --bg-radial-inner: #191c25;
+    --brand-icon-color: #f59e0b;
 
-    /* Safe Area insets for modern mobile displays (iPhone notches etc.) */
-    --sat: env(safe-area-inset-top, 0px);
-    --sar: env(safe-area-inset-right, 0px);
-    --sab: env(safe-area-inset-bottom, 0px);
-    --sal: env(safe-area-inset-left, 0px);
+    --color-idle: #e2e8f0;
+    --color-idle-accent: #64748b;
+    --color-prep: #f59e0b;
+    --color-prep-glow: rgba(245, 158, 11, 0.25);
+    --color-work: #ef4444;
+    --color-work-gold: #f59e0b;
+    --color-work-glow: rgba(239, 68, 68, 0.28);
+    --color-rest: #10b981;
+    --color-rest-glow: rgba(16, 185, 129, 0.25);
+    --color-pause: #38bdf8;
+    --color-pause-glow: rgba(56, 189, 248, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Color Theme 2: Rittersporn (Burgunderrot / Noble Medieval Burgundy)
+   -------------------------------------------------------------------------- */
+body[data-color-theme="rittersporn"] {
+    --bg-main: #130307;
+    --bg-surface: #22060e;
+    --bg-card: #340a16;
+    --border-color: #551426;
+    --text-primary: #fff1f2;
+    --text-secondary: #fecdd3;
+    --text-muted: #fda4af;
+    --bg-radial-inner: #360a19;
+    --brand-icon-color: #fbbf24;
+
+    --color-idle: #fecdd3;
+    --color-idle-accent: #9f1239;
+    --color-prep: #f59e0b;
+    --color-prep-glow: rgba(245, 158, 11, 0.35);
+    --color-work: #e11d48;
+    --color-work-gold: #fbbf24;
+    --color-work-glow: rgba(225, 29, 72, 0.4);
+    --color-rest: #10b981;
+    --color-rest-glow: rgba(16, 185, 129, 0.3);
+    --color-pause: #38bdf8;
+    --color-pause-glow: rgba(56, 189, 248, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   Color Theme 3: High Contrast (Light: Crisp White Background & Deep Black)
+   -------------------------------------------------------------------------- */
+body[data-color-theme="high-contrast"] {
+    --bg-main: #ffffff;
+    --bg-surface: #f1f5f9;
+    --bg-card: #e2e8f0;
+    --border-color: #0f172a;
+    --text-primary: #000000;
+    --text-secondary: #0f172a;
+    --text-muted: #334155;
+    --bg-radial-inner: #f8fafc;
+    --brand-icon-color: #991b1b;
+
+    --color-idle: #0f172a;
+    --color-idle-accent: #1e293b;
+    --color-prep: #d97706;
+    --color-prep-glow: rgba(217, 119, 6, 0.2);
+    --color-work: #b91c1c;
+    --color-work-gold: #b45309;
+    --color-work-glow: rgba(185, 28, 28, 0.2);
+    --color-rest: #15803d;
+    --color-rest-glow: rgba(21, 128, 61, 0.2);
+    --color-pause: #0284c7;
+    --color-pause-glow: rgba(2, 132, 199, 0.2);
 }
 
 /* Theme states applied dynamically to <body> */
 body.theme-idle {
-    --current-accent: #94a3b8;
+    --current-accent: var(--color-idle-accent);
     --current-glow: rgba(148, 163, 184, 0.15);
 }
 
@@ -107,9 +181,10 @@ html, body {
     width: 100%;
     height: 100%;
     padding: calc(12px + var(--sat)) calc(16px + var(--sar)) calc(10px + var(--sab)) calc(16px + var(--sal));
-    background: radial-gradient(circle at 50% 30%, #171a22 0%, var(--bg-main) 100%);
+    background: radial-gradient(circle at 50% 30%, var(--bg-radial-inner) 0%, var(--bg-main) 100%);
     position: relative;
     overflow: hidden;
+    transition: background 0.3s ease;
 }
 
 /* --------------------------------------------------------------------------
@@ -130,8 +205,9 @@ html, body {
 }
 
 .brand-icon {
-    color: var(--color-work-gold);
+    color: var(--brand-icon-color);
     filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.4));
+    transition: color 0.3s ease;
 }
 
 .brand-text {
@@ -467,6 +543,37 @@ body.theme-idle .btn-primary {
     gap: 8px;
 }
 
+.theme-presets-row {
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+.theme-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.theme-chip.active {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: var(--color-work-gold);
+    color: var(--text-primary);
+    box-shadow: 0 0 10px var(--current-glow);
+}
+
+body[data-color-theme="rittersporn"] .theme-chip.active {
+    background: rgba(225, 29, 72, 0.2);
+    border-color: #fbbf24;
+    color: #fff1f2;
+}
+
+body[data-color-theme="high-contrast"] .theme-chip.active {
+    background: #0f172a;
+    border-color: #000000;
+    color: #ffffff;
+}
+
 .btn-chip {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -666,6 +773,72 @@ body.theme-idle .btn-primary {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Special Overrides: High Contrast (Light Mode)
+   -------------------------------------------------------------------------- */
+body[data-color-theme="high-contrast"] .timer-digits {
+    color: #000000;
+    text-shadow: none;
+}
+
+body[data-color-theme="high-contrast"] .round-badge {
+    background: #e2e8f0;
+    border-color: #0f172a;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+body[data-color-theme="high-contrast"] .progress-bar-container {
+    background: #e2e8f0;
+    border: 1px solid #0f172a;
+    box-shadow: none;
+}
+
+body[data-color-theme="high-contrast"] .btn-primary {
+    border: 2px solid #000000;
+    color: #ffffff;
+}
+
+body[data-color-theme="high-contrast"] .btn-secondary {
+    border: 2px solid #0f172a;
+    background: #ffffff;
+    color: #000000;
+}
+
+body[data-color-theme="high-contrast"] .btn-secondary:hover {
+    background: #f1f5f9;
+}
+
+body[data-color-theme="high-contrast"].theme-idle .btn-primary {
+    background: #0f172a;
+    color: #ffffff;
+}
+
+body[data-color-theme="high-contrast"] .icon-btn {
+    border: 1px solid #0f172a;
+    color: #0f172a;
+}
+
+body[data-color-theme="high-contrast"] .icon-btn:hover {
+    background: #e2e8f0;
+}
+
+body[data-color-theme="high-contrast"] .settings-drawer {
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Special Overrides: Rittersporn (Burgundy Mode)
+   -------------------------------------------------------------------------- */
+body[data-color-theme="rittersporn"] .brand-title {
+    color: #fff1f2;
+    text-shadow: 0 0 10px rgba(225, 29, 72, 0.4);
+}
+
+body[data-color-theme="rittersporn"] .brand-sub {
+    color: #f472b6;
 }
 
 /* Utility */

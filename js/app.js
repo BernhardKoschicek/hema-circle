@@ -1,6 +1,6 @@
 /**
  * HEMA Timer - Main Application Controller
- * Handles UI interactions, state synchronization, events, shortcuts, i18n & persistence.
+ * Handles UI interactions, state synchronization, events, shortcuts, i18n, themes & persistence.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSkip: 'Skip',
             btnReset: 'Reset',
             settingsTitle: 'Timer Einstellungen',
+            themeLabel: 'Farbschema:',
+            themeIron: '🛡️ Fechtsaal',
+            themeRittersporn: '🍷 Rittersporn',
+            themeHighContrast: '☀️ High Contrast',
             presetsLabel: 'HEMA Vorlagen:',
             presetSparring: '2m / 30s (Sparring)',
             presetDrills: '1m / 15s (Drills)',
@@ -42,14 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
             labelRounds: 'Runden (0 = Endlos)',
             unitRounds: 'Runden',
             btnApply: 'Übernehmen & Schließen',
-            hotkeyHint: '⌨️ <strong>Leertaste:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Vollbild | <strong>L:</strong> Sprache',
+            hotkeyHint: '⌨️ <strong>Leertaste:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Vollbild | <strong>L:</strong> Sprache | <strong>T:</strong> Schema',
             wakelockActive: '📱 Display aktiv',
             titleSound: 'Ton umschalten',
             titleFullscreen: 'Vollbild',
             titleSettings: 'Einstellungen',
             titleReset: 'Zurücksetzen [Taste R]',
             titleSkip: 'Phase überspringen [Taste S]',
-            titleLang: 'Sprache wechseln (Deutsch / English)'
+            titleLang: 'Sprache wechseln (Deutsch / English)',
+            titleTheme: 'Farbschema wechseln [Taste T]'
         },
         en: {
             brandTitle: 'HEMA TIMER',
@@ -71,6 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSkip: 'Skip',
             btnReset: 'Reset',
             settingsTitle: 'Timer Settings',
+            themeLabel: 'Color Theme:',
+            themeIron: '🛡️ Iron Sala',
+            themeRittersporn: '🍷 Rittersporn',
+            themeHighContrast: '☀️ High Contrast',
             presetsLabel: 'HEMA Presets:',
             presetSparring: '2m / 30s (Sparring)',
             presetDrills: '1m / 15s (Drills)',
@@ -85,21 +94,34 @@ document.addEventListener('DOMContentLoaded', () => {
             labelRounds: 'Rounds (0 = Infinite)',
             unitRounds: 'Rounds',
             btnApply: 'Apply & Close',
-            hotkeyHint: '⌨️ <strong>Space:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Fullscreen | <strong>L:</strong> Language',
+            hotkeyHint: '⌨️ <strong>Space:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Fullscreen | <strong>L:</strong> Language | <strong>T:</strong> Theme',
             wakelockActive: '📱 Screen awake',
             titleSound: 'Toggle Sound',
             titleFullscreen: 'Fullscreen',
             titleSettings: 'Settings',
             titleReset: 'Reset [Key R]',
             titleSkip: 'Skip Phase [Key S]',
-            titleLang: 'Switch Language (English / Deutsch)'
+            titleLang: 'Switch Language (English / Deutsch)',
+            titleTheme: 'Switch Theme [Key T]'
         }
     };
 
     let currentLang = 'de';
 
+    // -------------------------------------------------------------------------
+    // Theme System
+    // -------------------------------------------------------------------------
+    const THEMES = ['iron', 'rittersporn', 'high-contrast'];
+    const THEME_COLORS = {
+        'iron': '#0e1014',
+        'rittersporn': '#130307',
+        'high-contrast': '#ffffff'
+    };
+    let currentTheme = 'iron';
+
     // DOM Elements
     const body = document.body;
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     const displayTime = document.getElementById('display-time');
     const displayPhase = document.getElementById('display-phase');
     const displayRound = document.getElementById('display-round');
@@ -113,6 +135,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const iconPause = document.getElementById('icon-pause');
     const btnSkip = document.getElementById('btn-skip');
     const btnReset = document.getElementById('btn-reset');
+
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    const themeChips = document.querySelectorAll('.theme-chip');
 
     const btnLangToggle = document.getElementById('btn-lang-toggle');
     const langIndicator = document.getElementById('lang-indicator');
@@ -128,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSettingsClose = document.getElementById('btn-settings-close');
     const settingsDrawer = document.getElementById('settings-drawer');
     const btnApplySettings = document.getElementById('btn-apply-settings');
-    const presetChips = document.querySelectorAll('.btn-chip');
+    const presetChips = document.querySelectorAll('.preset-buttons:not(.theme-buttons) .btn-chip');
 
     const hotkeyHint = document.getElementById('hotkey-hint');
     const wakelockStatus = document.getElementById('wakelock-status');
@@ -149,6 +174,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // Local Storage Keys
     const STORAGE_KEY = 'hema_circuit_timer_cfg';
     const LANG_STORAGE_KEY = 'hema_circuit_timer_lang';
+    const THEME_STORAGE_KEY = 'hema_circuit_timer_theme';
+
+    /**
+     * Set Color Theme (iron, rittersporn, high-contrast)
+     */
+    function setColorTheme(themeId) {
+        if (!THEMES.includes(themeId)) themeId = 'iron';
+        currentTheme = themeId;
+
+        body.setAttribute('data-color-theme', currentTheme);
+
+        if (metaThemeColor && THEME_COLORS[currentTheme]) {
+            metaThemeColor.setAttribute('content', THEME_COLORS[currentTheme]);
+        }
+
+        // Update Theme Chips active state
+        themeChips.forEach(chip => {
+            if (chip.dataset.themeId === currentTheme) {
+                chip.classList.add('active');
+            } else {
+                chip.classList.remove('active');
+            }
+        });
+
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, currentTheme);
+        } catch (e) {
+            console.warn('Could not save theme to localStorage', e);
+        }
+    }
+
+    function cycleColorTheme() {
+        const nextIdx = (THEMES.indexOf(currentTheme) + 1) % THEMES.length;
+        setColorTheme(THEMES[nextIdx]);
+    }
 
     /**
      * Set language and re-translate all elements
@@ -168,12 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Update indicator button (indicates what clicking will switch to)
+        // Update indicator button (shows target switch)
         if (langIndicator) {
             langIndicator.textContent = currentLang === 'de' ? 'EN' : 'DE';
         }
 
         // Update button titles & aria-labels
+        if (btnThemeToggle) btnThemeToggle.title = dict.titleTheme;
         if (btnLangToggle) btnLangToggle.title = dict.titleLang;
         if (btnSoundToggle) btnSoundToggle.title = dict.titleSound;
         if (btnFullscreen) btnFullscreen.title = dict.titleFullscreen;
@@ -203,6 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
             if (savedLang && I18N[savedLang]) {
                 currentLang = savedLang;
+            }
+
+            const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+            if (savedTheme && THEMES.includes(savedTheme)) {
+                currentTheme = savedTheme;
             }
 
             const raw = localStorage.getItem(STORAGE_KEY);
@@ -309,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * Update UI theme styling and phase label according to current phase
      */
     function updateTheme(phase, subPhase) {
+        // Keep data-color-theme intact on body, only adjust class
         body.className = '';
         const dict = I18N[currentLang];
 
@@ -477,6 +544,18 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSkip.addEventListener('click', handleSkip);
     btnReset.addEventListener('click', handleReset);
 
+    // Theme Switcher Button
+    if (btnThemeToggle) {
+        btnThemeToggle.addEventListener('click', cycleColorTheme);
+    }
+
+    // Theme Chips in Settings Drawer
+    themeChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            setColorTheme(chip.dataset.themeId);
+        });
+    });
+
     // Language Toggle
     btnLangToggle.addEventListener('click', () => {
         setLanguage(currentLang === 'de' ? 'en' : 'de');
@@ -572,6 +651,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 setLanguage(currentLang === 'de' ? 'en' : 'de');
                 break;
+            case 'KeyT':
+                e.preventDefault();
+                cycleColorTheme();
+                break;
             case 'Escape':
                 if (settingsDrawer.classList.contains('open')) {
                     closeSettings();
@@ -582,6 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize application
     loadSavedSettings();
+    setColorTheme(currentTheme);
     setLanguage(currentLang);
     applyConfiguration();
 });

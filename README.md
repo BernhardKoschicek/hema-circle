@@ -29,6 +29,11 @@ hema, interval-timer, circuit-training, sparring, martial-arts, workout-timer, g
 
 ## 🌟 Key Features
 
+- 🎨 **3 High-Visibility Color Themes**:
+  - 🛡️ **Fechtsaal (Iron Slate)**: Clean dark theme with forged iron, amber, and blade teal accents.
+  - 🍷 **Rittersporn (Burgundy)**: Dedicated HEMA club theme in noble medieval burgundy/dark red with golden sheen.
+  - ☀️ **High Contrast (Light)**: Crisp white background with bold pitch-black digits for direct sunlight and outdoor sparring.
+  - Switch anytime via header palette button, settings drawer, or key <kbd>T</kbd>.
 - 🌐 **Bilingual (Deutsch & English)**: Toggle effortlessly between German and English anytime with the header button or key `L`.
 - ⏱️ **Minute & Second Precision**: Flexible, direct input for Work (`MM:SS`) and Rest (`MM:SS`) durations.
 - 🥋 **Quick HEMA Presets**:
@@ -64,6 +69,7 @@ hema, interval-timer, circuit-training, sparring, martial-arts, workout-timer, g
 | <kbd>F</kbd> | Fullscreen Toggle |
 | <kbd>M</kbd> | Mute / Unmute Audio |
 | <kbd>L</kbd> | Switch Language (DE / EN) |
+| <kbd>T</kbd> | Cycle Color Theme (Fechtsaal / Rittersporn / High Contrast) |
 | <kbd>Esc</kbd> | Close Settings Drawer |
 
 ---
