@@ -1,78 +1,145 @@
 # HEMA Circuit Timer ⚔️🛡️
 
-Ein leichtgewichtiger, responsiver Intervall-Timer für **Zirkeltraining**, **Sparring-Runden** und **Drills** im Fechtsaal (HEMA - Historical European Martial Arts) oder Fitnessbereich.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub%20Pages-blue.svg)](https://pages.github.com/)
+[![Built with Google Gemini](https://img.shields.io/badge/Built%20with-Google%20Gemini-4285F4.svg)](https://deepmind.google/technologies/gemini/)
+[![Pure Vanilla JS](https://img.shields.io/badge/Stack-HTML5%20%2F%20CSS3%20%2F%20Vanilla%20JS-F7DF1E.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![PWA Ready](https://img.shields.io/badge/Offline-100%25%20Compatible-brightgreen.svg)](#features)
 
-Entwickelt für den direkten Einsatz auf **Laptop**, **Tablet** und **Smartphone** sowie für das Hosting über **GitHub Pages** (ohne Backend, 100% offline-fähig).
-
----
-
-## Features
-
-- ⏱️ **Flexible Zeiteingabe**: Aktivphase & Pausephase bequem in Minuten und Sekunden einstellbar.
-- 🔁 **Rundenverwaltung**: Endlos-Modus oder feste Rundenzahl (z.B. 5 Runden).
-- 🔊 **Präzise Akustik-Signale (Web Audio API)**:
-  - Sekundengenaue Countdown-Beeps bei **5, 4, 3, 2, 1** vor Ende der Phase.
-  - Kräftiger, markanter Doppelton / Gong beim Phasenwechsel.
-  - Keine externen Audio-Dateien nötig, latenzfrei und sofort bereit.
-- ⏭️ **Phasensteuerung**:
-  - **Start / Pause / Fortsetzen**: In jeder Phase pausierbar.
-  - **Skip (Überspringen)**: Springt sofort zur nächsten Phase (z.B. Rest vorzeitig beenden).
-  - **Reset**: Setzt den Timer zurück.
-- 📱 **Mobil- und Laptop-Optimiert**:
-  - **Screen Wake Lock API**: Hält das Smartphone- und Laptop-Display aktiv, damit der Bildschirm während des Sparrings nicht ausgeht.
-  - **High-Contrast Dark Theme**: Riesige Ziffern, aus mehreren Metern Entfernung durch Fechtmasken erkennbar.
-  - **Touch & Handschuh-freundlich**: Große Trefferflächen für mobile Geräte.
-  - **Fullscreen-Modus**: Maximale Übersicht auf Monitoren und Smart-TVs in der Fechthalle.
-- ⌨️ **Tastatur-Shortcuts (für Präsentator / Bluetooth-Fernbedienung)**:
-  - `Leertaste`: Start / Pause / Fortsetzen
-  - `S` oder `→`: Phase überspringen (Skip)
-  - `R`: Zurücksetzen (Reset)
-  - `F`: Vollbildmodus
-  - `M`: Ton stummschalten / aktivieren
-- 💾 **Persistenz**: Speichert automatisch deine zuletzt gewählten Zeiten im lokalen Browserspeicher (`localStorage`).
+A modern, responsive, high-contrast interval & circuit training timer designed for Historical European Martial Arts (**HEMA**), combat sports, sparring, and fitness drills. Runs natively in any web browser on **Laptop**, **Tablet**, and **Smartphone**, and is built for seamless 1-click deployment to **GitHub Pages** (pure static frontend, zero dependencies, zero build step, 100% offline capable).
 
 ---
 
-## 🚀 Deployment auf GitHub Pages (Anleitung)
+## 📋 GitHub Repository Setup Helper
 
-Da das Projekt aus reinem HTML5, CSS3 und modernem JavaScript besteht, ist kein Build-Schritt nötig:
+To make your GitHub repository look clean and professional, use these recommended settings:
 
-1. **GitHub Repository erstellen**:
-   Erstelle auf [GitHub](https://github.com) ein neues Repository (z.B. `hema-timer` oder `hema-circle`).
+### Description
+> ⚔️ Precision interval & circuit training timer for HEMA (Historical European Martial Arts), sparring, and workouts. Runs in any browser, 100% offline, mobile & desktop optimized.
 
-2. **Code pushen**:
+### Website URL
+> `https://<YOUR-GITHUB-USERNAME>.github.io/<YOUR-REPO-NAME>/`
+
+### Suggested Topics / Tags
+```text
+hema, interval-timer, circuit-training, sparring, martial-arts, workout-timer, github-pages, vanilla-javascript, web-audio-api, wake-lock, built-with-gemini, open-source
+```
+
+---
+
+## 🌟 Key Features
+
+- 🌐 **Bilingual (Deutsch & English)**: Toggle effortlessly between German and English anytime with the header button or key `L`.
+- ⏱️ **Minute & Second Precision**: Flexible, direct input for Work (`MM:SS`) and Rest (`MM:SS`) durations.
+- 🥋 **Quick HEMA Presets**:
+  - `2m / 30s`: Standard HEMA Sparring & Freeplay
+  - `1m / 15s`: Footwork & Cutting Drills
+  - `30s / 15s`: High-Intensity Interval Training (HIIT)
+  - `3m / 1m`: Competitive Match Simulation (Fechtfeder / Rapier)
+- 🔁 **Flexible Round Modes**: Run open-ended (infinite) or set a targeted round count (e.g. 5 rounds).
+- 🔊 **Zero-Latency Web Audio Synthesizer**:
+  - Distinct countdown warning beeps at **5, 4, 3, 2, and 1 seconds** before every phase transition.
+  - Resonant two-tone gong / chime on phase transition.
+  - Synthesized directly by the browser's `AudioContext` — no external MP3 downloads, zero lag, works offline.
+  - Dedicated sound mute toggle (`M`).
+- ⏭️ **Phase Controls**:
+  - **Start / Pause / Resume**: Freeze timer instantly during work, prep, or rest phases.
+  - **Skip Phase**: Instantly jump from work to rest or skip rest to start fighting immediately.
+  - **Reset**: Return to the initial configuration with one tap.
+- 📱 **Mobile & Sala Visibility**:
+  - **Screen Wake Lock API**: Automatically prevents phone, tablet, and laptop screens from sleeping during sparring.
+  - **Ultra-High Contrast Theme**: Scalable giant digits readable through fencing masks and from across the fencing hall.
+  - **Landscape & Portrait Optimization**: Automatically adapts controls and digit layout.
+- 💾 **Automatic Persistence**: Remembers your preferred times, rounds, volume, and language in `localStorage`.
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Key | Action |
+| :--- | :--- |
+| <kbd>Space</kbd> | Start / Pause / Resume Timer |
+| <kbd>S</kbd> or <kbd>→</kbd> | Skip Phase (Work ↔ Rest) |
+| <kbd>R</kbd> | Reset Timer |
+| <kbd>F</kbd> | Fullscreen Toggle |
+| <kbd>M</kbd> | Mute / Unmute Audio |
+| <kbd>L</kbd> | Switch Language (DE / EN) |
+| <kbd>Esc</kbd> | Close Settings Drawer |
+
+---
+
+## 🚀 Deployment to GitHub Pages
+
+Because this application is written in standard HTML5, CSS3, and modern Vanilla JavaScript, **no build step or server is needed**:
+
+1. **Create a new GitHub Repository** (e.g. `hema-circle` or `hema-timer`).
+2. **Push your code**:
    ```bash
    git init
    git add .
-   git commit -m "Initial commit of HEMA circuit timer"
+   git commit -m "feat: initial release of HEMA circuit timer"
    git branch -M main
-   git remote add origin https://github.com/<DEIN-NUTZERNAME>/<DEIN-REPO-NAME>.git
+   git remote add origin https://github.com/<YOUR-USERNAME>/<YOUR-REPO-NAME>.git
    git push -u origin main
    ```
-
-3. **GitHub Pages aktivieren**:
-   - Gehe in deinem GitHub-Repository auf **Settings** -> **Pages**.
-   - Unter **Build and deployment** / **Branch** wähle `main` und Ordner `/ (root)`.
-   - Klicke auf **Save**.
-   - Nach wenigen Augenblicken ist dein Timer unter `https://<DEIN-NUTZERNAME>.github.io/<DEIN-REPO-NAME>/` weltweit erreichbar!
+3. **Activate GitHub Pages**:
+   - Go to your repository on GitHub.
+   - Navigate to **Settings** ➔ **Pages**.
+   - Under **Build and deployment** / **Branch**, select `main` and folder `/ (root)`.
+   - Click **Save**.
+   - Your timer will be live within seconds at:
+     ```
+     https://<YOUR-USERNAME>.github.io/<YOUR-REPO-NAME>/
+     ```
 
 ---
 
-## 💻 Lokales Testen
+## 💻 Local Development & Testing
 
-Du kannst das Projekt lokal mit jedem einfachen Webserver starten:
+Run a lightweight local server with Python or Node.js:
 
-### Mit Python:
 ```bash
+# Using Python
 python3 -m http.server 8080
+
+# Or using npx serve
+npx serve .
 ```
-Öffne anschließend [http://localhost:8080](http://localhost:8080) im Browser.
+
+Open [http://localhost:8080](http://localhost:8080) in your web browser.
 
 ---
 
-## 🎵 Spotify-Integration (Ausblick Phase 2)
+## 📂 Project Structure
 
-In einem nächsten Schritt kann eine Spotify-Anbindung ergänzt werden:
-- **Client-Side OAuth (PKCE)**: Ermöglicht die Spotify-Anmeldung direkt im Browser ohne Backend.
-- **Web Playback SDK**: Ermöglicht die Wiedergabe von Playlists direkt im Browser (erfordert einen Spotify-Premium-Account).
-- **Play/Pause Synchronisation**: Musik kann während der Aktivphase lauter und während der Pausen leiser geschaltet oder pausiert werden.
+```
+hema-circle/
+├── index.html          # Semantic HTML5 arena, responsive layout & i18n hooks
+├── css/
+│   └── style.css       # High-contrast martial theme, clamp() typography, mobile styling
+├── js/
+│   ├── audio.js        # Web Audio API sound synthesizer (beeps & resonant chimes)
+│   ├── timer.js        # Drift-free timestamp-based interval state machine
+│   ├── wakelock.js     # Screen Wake Lock controller for sleep prevention
+│   └── app.js          # Main app logic, keyboard bindings, i18n engine & persistence
+├── LICENSE             # Open-source MIT License
+├── README.md           # Documentation & GitHub Pages deployment guide
+└── .gitignore          # Standard repository ignore rules
+```
+
+---
+
+## 🎵 Spotify Integration (Roadmap)
+
+Future iterations can introduce background soundtrack synchronization:
+- **Client-Side OAuth (PKCE)**: Direct Spotify account login on GitHub Pages without server architecture.
+- **Spotify Web Playback SDK**: Play training playlists directly inside the browser tab (requires an active Spotify Premium account).
+- **Auto-Ducking**: Lower music volume during the 5-second countdown and rest periods, and crank up the energy during active rounds.
+
+---
+
+## 📄 License & Attribution
+
+This project is open-source software licensed under the [MIT License](LICENSE). You are free to use, modify, distribute, and integrate it into your own martial arts or sports projects.
+
+**Created with Google Gemini** ✦ Pair-programmed with AI.

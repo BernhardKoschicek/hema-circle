@@ -184,6 +184,13 @@ html, body {
     transform: scale(0.95);
 }
 
+.btn-lang {
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    color: var(--color-work-gold);
+}
+
 /* --------------------------------------------------------------------------
    Timer Arena (Central Viewport)
    -------------------------------------------------------------------------- */
@@ -621,6 +628,38 @@ body.theme-idle .btn-primary {
     font-size: 0.78rem;
     color: var(--text-muted);
     padding-top: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.footer-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.76rem;
+}
+
+.footer-divider {
+    color: var(--border-color);
+}
+
+.attribution {
+    color: var(--text-muted);
+}
+
+.attribution strong {
+    color: var(--text-secondary);
+}
+
+.attribution a {
+    color: var(--text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s ease;
+}
+
+.attribution a:hover {
+    color: var(--color-work-gold);
 }
 
 .wakelock-status {

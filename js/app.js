@@ -1,15 +1,108 @@
 /**
  * HEMA Timer - Main Application Controller
- * Handles UI interactions, state synchronization, events, shortcuts & persistence.
+ * Handles UI interactions, state synchronization, events, shortcuts, i18n & persistence.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // -------------------------------------------------------------------------
+    // Translations Dictionary (i18n)
+    // -------------------------------------------------------------------------
+    const I18N = {
+        de: {
+            brandTitle: 'HEMA TIMER',
+            brandSub: 'Fechtsaal Intervall',
+            phaseReady: 'BEREIT',
+            phasePrep: 'VORBEREITUNG',
+            phaseWork: 'AKTIV',
+            phaseRest: 'PAUSE',
+            phasePaused: 'PAUSIERT',
+            phaseComplete: 'FERTIG',
+            roundPrefix: 'Runde',
+            nextPhase: 'Nächste Phase',
+            nextRoundLabel: 'Nächste Runde',
+            workPhaseName: 'Aktiv',
+            restPhaseName: 'Pause',
+            btnStart: 'START',
+            btnPause: 'PAUSE',
+            btnResume: 'WEITER',
+            btnSkip: 'Skip',
+            btnReset: 'Reset',
+            settingsTitle: 'Timer Einstellungen',
+            presetsLabel: 'HEMA Vorlagen:',
+            presetSparring: '2m / 30s (Sparring)',
+            presetDrills: '1m / 15s (Drills)',
+            presetHiit: '30s / 15s (HIIT)',
+            presetMatch: '3m / 1m (Gefecht)',
+            cardWork: '⚔️ Aktivphase (Runde)',
+            cardRest: '🛡️ Pausephase',
+            cardOptions: '⚙️ Optionen',
+            unitMin: 'Min',
+            unitSec: 'Sek',
+            labelPrep: 'Vorbereitungszeit',
+            labelRounds: 'Runden (0 = Endlos)',
+            unitRounds: 'Runden',
+            btnApply: 'Übernehmen & Schließen',
+            hotkeyHint: '⌨️ <strong>Leertaste:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Vollbild | <strong>L:</strong> Sprache',
+            wakelockActive: '📱 Display aktiv',
+            titleSound: 'Ton umschalten',
+            titleFullscreen: 'Vollbild',
+            titleSettings: 'Einstellungen',
+            titleReset: 'Zurücksetzen [Taste R]',
+            titleSkip: 'Phase überspringen [Taste S]',
+            titleLang: 'Sprache wechseln (Deutsch / English)'
+        },
+        en: {
+            brandTitle: 'HEMA TIMER',
+            brandSub: 'Sala Interval',
+            phaseReady: 'READY',
+            phasePrep: 'PREPARE',
+            phaseWork: 'WORK',
+            phaseRest: 'REST',
+            phasePaused: 'PAUSED',
+            phaseComplete: 'COMPLETE',
+            roundPrefix: 'Round',
+            nextPhase: 'Next Phase',
+            nextRoundLabel: 'Next Round',
+            workPhaseName: 'Work',
+            restPhaseName: 'Rest',
+            btnStart: 'START',
+            btnPause: 'PAUSE',
+            btnResume: 'RESUME',
+            btnSkip: 'Skip',
+            btnReset: 'Reset',
+            settingsTitle: 'Timer Settings',
+            presetsLabel: 'HEMA Presets:',
+            presetSparring: '2m / 30s (Sparring)',
+            presetDrills: '1m / 15s (Drills)',
+            presetHiit: '30s / 15s (HIIT)',
+            presetMatch: '3m / 1m (Match)',
+            cardWork: '⚔️ Work Phase (Round)',
+            cardRest: '🛡️ Rest Phase',
+            cardOptions: '⚙️ Options',
+            unitMin: 'Min',
+            unitSec: 'Sec',
+            labelPrep: 'Preparation Time',
+            labelRounds: 'Rounds (0 = Infinite)',
+            unitRounds: 'Rounds',
+            btnApply: 'Apply & Close',
+            hotkeyHint: '⌨️ <strong>Space:</strong> Pause | <strong>S:</strong> Skip | <strong>R:</strong> Reset | <strong>F:</strong> Fullscreen | <strong>L:</strong> Language',
+            wakelockActive: '📱 Screen awake',
+            titleSound: 'Toggle Sound',
+            titleFullscreen: 'Fullscreen',
+            titleSettings: 'Settings',
+            titleReset: 'Reset [Key R]',
+            titleSkip: 'Skip Phase [Key S]',
+            titleLang: 'Switch Language (English / Deutsch)'
+        }
+    };
+
+    let currentLang = 'de';
+
     // DOM Elements
     const body = document.body;
     const displayTime = document.getElementById('display-time');
     const displayPhase = document.getElementById('display-phase');
     const displayRound = document.getElementById('display-round');
-    const nextPhaseInfo = document.getElementById('next-phase-info');
     const nextPhaseName = document.getElementById('next-phase-name');
     const progressBar = document.getElementById('progress-bar');
     const warningFlash = document.getElementById('warning-flash');
@@ -20,6 +113,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const iconPause = document.getElementById('icon-pause');
     const btnSkip = document.getElementById('btn-skip');
     const btnReset = document.getElementById('btn-reset');
+
+    const btnLangToggle = document.getElementById('btn-lang-toggle');
+    const langIndicator = document.getElementById('lang-indicator');
 
     const btnSoundToggle = document.getElementById('btn-sound-toggle');
     const iconSoundOn = document.getElementById('icon-sound-on');
@@ -33,6 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsDrawer = document.getElementById('settings-drawer');
     const btnApplySettings = document.getElementById('btn-apply-settings');
     const presetChips = document.querySelectorAll('.btn-chip');
+
+    const hotkeyHint = document.getElementById('hotkey-hint');
+    const wakelockStatus = document.getElementById('wakelock-status');
 
     // Input Fields
     const inputWorkMin = document.getElementById('input-work-min');
@@ -49,12 +148,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Local Storage Keys
     const STORAGE_KEY = 'hema_circuit_timer_cfg';
+    const LANG_STORAGE_KEY = 'hema_circuit_timer_lang';
+
+    /**
+     * Set language and re-translate all elements
+     */
+    function setLanguage(lang) {
+        if (!I18N[lang]) lang = 'de';
+        currentLang = lang;
+        document.documentElement.lang = currentLang;
+
+        const dict = I18N[currentLang];
+
+        // Update all data-i18n elements
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (dict[key]) {
+                el.textContent = dict[key];
+            }
+        });
+
+        // Update indicator button (indicates what clicking will switch to)
+        if (langIndicator) {
+            langIndicator.textContent = currentLang === 'de' ? 'EN' : 'DE';
+        }
+
+        // Update button titles & aria-labels
+        if (btnLangToggle) btnLangToggle.title = dict.titleLang;
+        if (btnSoundToggle) btnSoundToggle.title = dict.titleSound;
+        if (btnFullscreen) btnFullscreen.title = dict.titleFullscreen;
+        if (btnSettingsToggle) btnSettingsToggle.title = dict.titleSettings;
+        if (btnReset) btnReset.title = dict.titleReset;
+        if (btnSkip) btnSkip.title = dict.titleSkip;
+        if (hotkeyHint) hotkeyHint.innerHTML = dict.hotkeyHint;
+        if (wakelockStatus) wakelockStatus.textContent = dict.wakelockActive;
+
+        // Re-render dynamic timer labels
+        updateTheme(timer.state, timer.previousState);
+        updateNextPhasePreview();
+        updateRoundDisplay(timer.currentRound, timer.config.totalRounds);
+
+        try {
+            localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+        } catch (e) {
+            console.warn('Could not save language to localStorage', e);
+        }
+    }
 
     /**
      * Load settings from localStorage or defaults
      */
     function loadSavedSettings() {
         try {
+            const savedLang = localStorage.getItem(LANG_STORAGE_KEY);
+            if (savedLang && I18N[savedLang]) {
+                currentLang = savedLang;
+            }
+
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const cfg = JSON.parse(raw);
@@ -108,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveSettings();
         updateNextPhasePreview();
+        updateRoundDisplay(timer.currentRound, timer.config.totalRounds);
     }
 
     /**
@@ -120,58 +271,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Update Next Phase Preview text
+     * Update Next Phase Preview text in current language
      */
     function updateNextPhasePreview() {
+        const dict = I18N[currentLang];
         const restSec = (parseInt(inputRestMin.value, 10) || 0) * 60 + (parseInt(inputRestSec.value, 10) || 0);
         const workSec = (parseInt(inputWorkMin.value, 10) || 0) * 60 + (parseInt(inputWorkSec.value, 10) || 0);
 
         if (timer.state === 'PREP') {
-            nextPhaseName.textContent = `Aktiv (${formatTime(workSec)})`;
+            nextPhaseName.textContent = `${dict.workPhaseName} (${formatTime(workSec)})`;
         } else if (timer.state === 'WORK') {
             if (restSec > 0) {
-                nextPhaseName.textContent = `Pause (${formatTime(restSec)})`;
+                nextPhaseName.textContent = `${dict.restPhaseName} (${formatTime(restSec)})`;
             } else {
-                nextPhaseName.textContent = `Nächste Runde (${formatTime(workSec)})`;
+                nextPhaseName.textContent = `${dict.nextRoundLabel} (${formatTime(workSec)})`;
             }
         } else if (timer.state === 'REST') {
-            nextPhaseName.textContent = `Aktiv (${formatTime(workSec)})`;
+            nextPhaseName.textContent = `${dict.workPhaseName} (${formatTime(workSec)})`;
         } else {
-            nextPhaseName.textContent = `Pause (${formatTime(restSec)})`;
+            nextPhaseName.textContent = `${dict.restPhaseName} (${formatTime(restSec)})`;
         }
     }
 
     /**
-     * Update UI theme styling according to current phase
+     * Update round display text
+     */
+    function updateRoundDisplay(round, totalRounds) {
+        const dict = I18N[currentLang];
+        if (totalRounds > 0) {
+            displayRound.textContent = `${dict.roundPrefix} ${round} / ${totalRounds}`;
+        } else {
+            displayRound.textContent = `${dict.roundPrefix} ${round}`;
+        }
+    }
+
+    /**
+     * Update UI theme styling and phase label according to current phase
      */
     function updateTheme(phase, subPhase) {
         body.className = '';
-        const effectivePhase = phase === 'PAUSED' ? subPhase : phase;
+        const dict = I18N[currentLang];
 
         switch (phase) {
             case 'IDLE':
                 body.classList.add('theme-idle');
-                displayPhase.textContent = 'BEREIT';
+                displayPhase.textContent = dict.phaseReady;
                 break;
             case 'PREP':
                 body.classList.add('theme-prep');
-                displayPhase.textContent = 'VORBEREITUNG';
+                displayPhase.textContent = dict.phasePrep;
                 break;
             case 'WORK':
                 body.classList.add('theme-work');
-                displayPhase.textContent = 'AKTIV';
+                displayPhase.textContent = dict.phaseWork;
                 break;
             case 'REST':
                 body.classList.add('theme-rest');
-                displayPhase.textContent = 'PAUSE';
+                displayPhase.textContent = dict.phaseRest;
                 break;
             case 'PAUSED':
                 body.classList.add('theme-paused');
-                displayPhase.textContent = 'PAUSIERT';
+                displayPhase.textContent = dict.phasePaused;
                 break;
             case 'COMPLETE':
                 body.classList.add('theme-complete');
-                displayPhase.textContent = 'FERTIG';
+                displayPhase.textContent = dict.phaseComplete;
                 break;
         }
 
@@ -179,15 +343,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (phase === 'WORK' || phase === 'REST' || phase === 'PREP') {
             iconPlay.classList.add('hidden');
             iconPause.classList.remove('hidden');
-            btnPrimaryText.textContent = 'PAUSE';
+            btnPrimaryText.textContent = dict.btnPause;
         } else if (phase === 'PAUSED') {
             iconPlay.classList.remove('hidden');
             iconPause.classList.add('hidden');
-            btnPrimaryText.textContent = 'WEITER';
+            btnPrimaryText.textContent = dict.btnResume;
         } else {
             iconPlay.classList.remove('hidden');
             iconPause.classList.add('hidden');
-            btnPrimaryText.textContent = 'START';
+            btnPrimaryText.textContent = dict.btnStart;
         }
     }
 
@@ -198,13 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayTime.textContent = formatTime(remainingSeconds);
         progressBar.style.width = `${Math.min(100, Math.max(0, progress * 100))}%`;
 
-        // Update round info
-        if (totalRounds > 0) {
-            displayRound.textContent = `Runde ${round} / ${totalRounds}`;
-        } else {
-            displayRound.textContent = `Runde ${round}`;
-        }
-
+        updateRoundDisplay(round, totalRounds);
         updateTheme(phase, subPhase);
         updateNextPhasePreview();
 
@@ -241,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     timer.onComplete = () => {
         displayTime.classList.remove('warning-pulse');
-        sound.playPhaseChangeBeep('work'); // Celebration signal
+        sound.playPhaseChangeBeep('work'); // Celebration chime
         wakeLock.releaseLock();
     };
 
@@ -318,6 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPrimary.addEventListener('click', handlePrimaryAction);
     btnSkip.addEventListener('click', handleSkip);
     btnReset.addEventListener('click', handleReset);
+
+    // Language Toggle
+    btnLangToggle.addEventListener('click', () => {
+        setLanguage(currentLang === 'de' ? 'en' : 'de');
+    });
 
     btnSoundToggle.addEventListener('click', () => {
         sound.init();
@@ -405,6 +568,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 setSoundMuted(!sound.isMuted);
                 break;
+            case 'KeyL':
+                e.preventDefault();
+                setLanguage(currentLang === 'de' ? 'en' : 'de');
+                break;
             case 'Escape':
                 if (settingsDrawer.classList.contains('open')) {
                     closeSettings();
@@ -415,5 +582,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize application
     loadSavedSettings();
+    setLanguage(currentLang);
     applyConfiguration();
 });
