@@ -80,7 +80,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             spotifySyncToggle: 'Musik mit Timer synchronisieren (Start/Pause)',
             spotifyPauseRestToggle: 'Musik in der Pausephase pausieren',
             spotifyDuckToggle: 'Auto-Ducking (Musik leiser bei 5s Countdown)',
-            spotifyRedirectHint: 'Redirect URI für dein Spotify Dashboard:'
+            spotifyRedirectHint: 'Redirect URI für dein Spotify Dashboard:',
+            loadingDevices: 'Geräte werden geladen...',
+            duckOpt50: '50% (Leicht gedimmt)',
+            duckOpt25: '25% (Mittel / Empfohlen)',
+            duckOpt15: '15% (Deutlich leiser)',
+            createdWith: 'Erstellt mit',
+            mitLicense: 'MIT Lizenz',
+            spotifyReady: 'Spotify bereit',
+            spotifyReadySub: 'Starte Wiedergabe oder Timer',
+            deviceActiveLabel: ' • Aktiv',
+            sharePromptText: 'Training teilen (Text kopieren):',
+            shareTitle: 'HEMA Rittersporn Training',
+            shareTextCompleted: 'HEMA Rittersporn Training abgeschlossen!',
+            shareTextRounds: 'Runden absolviert',
+            shareTextFightTime: 'reine Fechtzeit',
+            shareTextTotalTime: 'Gesamtdauer',
+            titleCloseSettings: 'Einstellungen schließen'
         },
         en: {
             brandTitle: 'HEMA TIMER',
@@ -154,7 +170,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             spotifySyncToggle: 'Sync music with timer (Play/Pause)',
             spotifyPauseRestToggle: 'Pause music during rest phase',
             spotifyDuckToggle: 'Auto-Ducking (Lower music on 5s countdown)',
-            spotifyRedirectHint: 'Redirect URI for your Spotify Dashboard:'
+            spotifyRedirectHint: 'Redirect URI for your Spotify Dashboard:',
+            loadingDevices: 'Loading devices...',
+            duckOpt50: '50% (Slightly dimmed)',
+            duckOpt25: '25% (Medium / Recommended)',
+            duckOpt15: '15% (Much quieter)',
+            createdWith: 'Created with',
+            mitLicense: 'MIT License',
+            spotifyReady: 'Spotify ready',
+            spotifyReadySub: 'Start playback or timer',
+            deviceActiveLabel: ' • Active',
+            sharePromptText: 'Share workout (copy text):',
+            shareTitle: 'HEMA Rittersporn Training',
+            shareTextCompleted: 'HEMA Rittersporn Training completed!',
+            shareTextRounds: 'rounds completed',
+            shareTextFightTime: 'combat time',
+            shareTextTotalTime: 'total duration',
+            titleCloseSettings: 'Close settings'
         }
     };
 
@@ -332,6 +364,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnSettingsToggle) btnSettingsToggle.title = dict.titleSettings;
         if (btnReset) btnReset.title = dict.titleReset;
         if (btnSkip) btnSkip.title = dict.titleSkip;
+        if (btnSettingsClose) btnSettingsClose.setAttribute('aria-label', dict.titleCloseSettings);
         if (hotkeyHint) hotkeyHint.innerHTML = dict.hotkeyHint;
         if (wakelockStatus) wakelockStatus.textContent = dict.wakelockActive;
 
@@ -576,8 +609,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 spotifyTrackTitle.textContent = spotify.currentTrack.title;
                 spotifyTrackArtist.textContent = spotify.currentTrack.artist;
             } else {
-                spotifyTrackTitle.textContent = 'Spotify bereit';
-                spotifyTrackArtist.textContent = 'Starte Wiedergabe oder Timer';
+                spotifyTrackTitle.textContent = dict.spotifyReady;
+                spotifyTrackArtist.textContent = dict.spotifyReadySub;
             }
 
             // Update Play/Pause button icons
@@ -595,7 +628,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 spotify.devices.forEach(dev => {
                     const opt = document.createElement('option');
                     opt.value = dev.id;
-                    opt.textContent = `${dev.name} (${dev.type})${dev.is_active ? ' • Aktiv' : ''}`;
+                    opt.textContent = `${dev.name} (${dev.type})${dev.is_active ? dict.deviceActiveLabel : ''}`;
                     if (dev.id === spotify.selectedDeviceId) {
                         opt.selected = true;
                     }
@@ -718,12 +751,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalTime = formatTime(stats.totalElapsedSeconds);
         const shareUrl = window.location.origin + window.location.pathname;
 
-        const shareText = `⚔️ HEMA Rittersporn Training abgeschlossen!\n🔥 ${rounds} Runden absolviert (${fightTime} Min. reine Fechtzeit / ${totalTime} Gesamtdauer)\n⏱️ HEMA Circuit Timer: ${shareUrl}`;
+        const shareText = `⚔️ ${dict.shareTextCompleted}\n🔥 ${rounds} ${dict.shareTextRounds} (${fightTime} Min. ${dict.shareTextFightTime} / ${totalTime} ${dict.shareTextTotalTime})\n⏱️ HEMA Circuit Timer: ${shareUrl}`;
 
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'HEMA Rittersporn Training',
+                    title: dict.shareTitle,
                     text: shareText,
                     url: shareUrl
                 });
@@ -743,7 +776,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }, 2500);
             }
         } catch (e) {
-            prompt('Training teilen (Text kopieren):', shareText);
+            prompt(dict.sharePromptText, shareText);
         }
     }
 

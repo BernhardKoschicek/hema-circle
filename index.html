@@ -41,7 +41,7 @@
                     <path d="M6 22l-4-4"></path>
                 </svg>
                 <div class="brand-text">
-                    <span class="brand-title">HEMA TIMER</span>
+                    <span class="brand-title" data-i18n="brandTitle">HEMA TIMER</span>
                     <span class="brand-sub" data-i18n="brandSub">Fechtsaal Intervall</span>
                 </div>
             </div>
@@ -108,7 +108,7 @@
         <main class="timer-arena">
             <!-- Phase Badge & Round Status -->
             <div class="phase-meta">
-                <span id="display-phase" class="phase-badge">BEREIT</span>
+                <span id="display-phase" class="phase-badge" data-i18n="phaseReady">BEREIT</span>
                 <span id="display-round" class="round-badge">Runde 1</span>
             </div>
 
@@ -326,7 +326,7 @@
                         <div id="spotify-device-box" class="field-row hidden">
                             <label for="select-spotify-device" class="sub-label" data-i18n="spotifyDeviceLabel">Ausgabegerät (Spotify Connect):</label>
                             <select id="select-spotify-device" class="select-input">
-                                <option value="">Geräte werden geladen...</option>
+                                <option value="" data-i18n="loadingDevices">Geräte werden geladen...</option>
                             </select>
                         </div>
 
@@ -334,9 +334,9 @@
                         <div class="field-row">
                             <label for="select-duck-level" class="sub-label" data-i18n="spotifyDuckLevelLabel">Musik-Lautstärke beim Countdown (Ducking):</label>
                             <select id="select-duck-level" class="select-input">
-                                <option value="0.50">50% (Leicht gedimmt)</option>
-                                <option value="0.25" selected>25% (Mittel / Empfohlen)</option>
-                                <option value="0.15">15% (Deutlich leiser)</option>
+                                <option value="0.50" data-i18n="duckOpt50">50% (Leicht gedimmt)</option>
+                                <option value="0.25" selected data-i18n="duckOpt25">25% (Mittel / Empfohlen)</option>
+                                <option value="0.15" data-i18n="duckOpt15">15% (Deutlich leiser)</option>
                             </select>
                         </div>
 
@@ -416,7 +416,7 @@
             <div class="footer-meta">
                 <span class="wakelock-status" id="wakelock-status">📱 Display aktiv</span>
                 <span class="footer-divider">•</span>
-                <span class="attribution">Created with <strong>Google Gemini</strong> • <a href="LICENSE" target="_blank" rel="noopener">MIT License</a></span>
+                <span class="attribution"><span data-i18n="createdWith">Erstellt mit</span> <strong>Google Gemini</strong> • <a href="LICENSE" target="_blank" rel="noopener" data-i18n="mitLicense">MIT Lizenz</a></span>
             </div>
         </footer>
     </div>
