@@ -642,7 +642,20 @@ body.theme-idle .btn-primary {
 .theme-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+}
+
+.theme-chip-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    border-radius: 3px;
+    vertical-align: middle;
+}
+
+.chip-icon {
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .theme-chip.active {

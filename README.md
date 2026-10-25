@@ -31,7 +31,7 @@ hema, interval-timer, circuit-training, sparring, martial-arts, workout-timer, g
 
 - 🎨 **3 High-Visibility Color Themes**:
   - 🛡️ **Fechtsaal (Iron Slate)**: Clean dark theme with forged iron, amber, and blade teal accents.
-  - 🍷 **Rittersporn (Burgundy)**: Dedicated HEMA club theme in noble medieval burgundy/dark red with golden sheen.
+  - ⚜️ **Rittersporn (Burgundy)**: Dedicated HEMA club theme featuring the official Rittersporn coat-of-arms icon in noble medieval burgundy/dark red with golden sheen.
   - ☀️ **High Contrast (Light)**: Crisp white background with bold pitch-black digits for direct sunlight and outdoor sparring.
   - Switch anytime via header palette button, settings drawer, or key <kbd>T</kbd>.
 - 🌐 **Bilingual (Deutsch & English)**: Toggle effortlessly between German and English anytime with the header button or key `L`.

@@ -15,7 +15,9 @@ const ASSETS_TO_CACHE = [
   './js/app.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
-  './icons/icon.svg'
+  './icons/icon.svg',
+  './icons/rittersporn-favicon.png',
+  './icons/rittersporn-logo.png'
 ];
 
 self.addEventListener('install', (event) => {
