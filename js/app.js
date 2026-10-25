@@ -96,7 +96,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             shareTextRounds: 'Runden absolviert',
             shareTextFightTime: 'reine Fechtzeit',
             shareTextTotalTime: 'Gesamtdauer',
-            titleCloseSettings: 'Einstellungen schließen'
+            titleCloseSettings: 'Einstellungen schließen',
+            btnConnectShort: 'Verbinden',
+            spotifyGuideIntro: '💡 <strong>So nutzt du Musik im Fechttraining:</strong>',
+            spotifyGuideStep1: '1. Einmalig mit deinem Spotify-Konto verbinden.',
+            spotifyGuideStep2: '2. Starte deine Trainings-Playlist in der Spotify-App auf deinem Handy.',
+            spotifyGuideStep3: '3. Der Timer steuert die Musik: Auto-Pause in den Rundenpausen & Ducking beim Countdown!',
+            btnOpenSpotifyApp: '📱 Spotify-App öffnen',
+            spotifyNoActiveDevice: 'Tippe um Song in Spotify-App zu starten!'
         },
         en: {
             brandTitle: 'HEMA TIMER',
@@ -186,7 +193,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             shareTextRounds: 'rounds completed',
             shareTextFightTime: 'combat time',
             shareTextTotalTime: 'total duration',
-            titleCloseSettings: 'Close settings'
+            titleCloseSettings: 'Close settings',
+            btnConnectShort: 'Connect',
+            spotifyGuideIntro: '💡 <strong>How to use music in fencing training:</strong>',
+            spotifyGuideStep1: '1. Connect once with your Spotify account.',
+            spotifyGuideStep2: '2. Start your workout playlist in the Spotify app on your phone.',
+            spotifyGuideStep3: '3. The timer controls playback: Auto-pause during rest & ducking on countdown!',
+            btnOpenSpotifyApp: '📱 Open Spotify App',
+            spotifyNoActiveDevice: 'Tap to start track in Spotify App!'
         }
     };
 
@@ -255,6 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const spotifyWidgetInfo = document.getElementById('spotify-widget-info');
     const spotifyTrackTitle = document.getElementById('spotify-track-title');
     const spotifyTrackArtist = document.getElementById('spotify-track-artist');
+    const btnSpotifyQuickConnect = document.getElementById('btn-spotify-quick-connect');
     const btnSpotifyToggle = document.getElementById('btn-spotify-toggle');
     const iconSpotifyPlay = document.getElementById('icon-spotify-play');
     const iconSpotifyPause = document.getElementById('icon-spotify-pause');
@@ -346,7 +361,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (dict[key]) {
-                el.textContent = dict[key];
+                if (dict[key].includes('<')) {
+                    el.innerHTML = dict[key];
+                } else {
+                    el.textContent = dict[key];
+                }
             }
         });
 
@@ -604,6 +623,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnSpotifyDisconnect.classList.remove('hidden');
             spotifyDeviceBox.classList.remove('hidden');
 
+            if (btnSpotifyQuickConnect) btnSpotifyQuickConnect.classList.add('hidden');
+            if (btnSpotifyToggle) btnSpotifyToggle.classList.remove('hidden');
+            if (btnSpotifyNext) btnSpotifyNext.classList.remove('hidden');
+
             // Update mini-bar widget
             if (spotify.currentTrack) {
                 spotifyTrackTitle.textContent = spotify.currentTrack.title;
@@ -642,6 +665,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             btnSpotifyConnect.classList.remove('hidden');
             btnSpotifyDisconnect.classList.add('hidden');
             spotifyDeviceBox.classList.add('hidden');
+
+            if (btnSpotifyQuickConnect) btnSpotifyQuickConnect.classList.remove('hidden');
+            if (btnSpotifyToggle) btnSpotifyToggle.classList.add('hidden');
+            if (btnSpotifyNext) btnSpotifyNext.classList.add('hidden');
 
             spotifyTrackTitle.textContent = dict.spotifyNotConnected;
             spotifyTrackArtist.textContent = dict.spotifyClickToConnect;
@@ -890,9 +917,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnFullscreen.addEventListener('click', toggleFullscreen);
 
     // Settings Drawer
-    function openSettings() {
+    function openSettings(targetSectionId = null) {
         settingsDrawer.classList.add('open');
         if (spotify) spotify.refreshDevices();
+        if (targetSectionId) {
+            setTimeout(() => {
+                const target = document.getElementById(targetSectionId);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 150);
+        }
     }
 
     function closeSettings() {
@@ -915,8 +950,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (spotifyWidgetInfo) {
         spotifyWidgetInfo.addEventListener('click', () => {
             if (!spotify.token) {
-                openSettings();
+                // Direct login with Spotify
+                spotify.login();
+            } else {
+                openSettings('spotify-settings-card');
             }
+        });
+    }
+
+    if (btnSpotifyQuickConnect) {
+        btnSpotifyQuickConnect.addEventListener('click', (e) => {
+            e.stopPropagation();
+            spotify.login();
         });
     }
 
@@ -926,9 +971,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (spotify.token) {
                 spotify.togglePlayPause();
             } else {
-                openSettings();
+                spotify.login();
             }
         });
+    }
+
+    if (spotify) {
+        spotify.onPlaybackError = (code) => {
+            if (code === 'NO_ACTIVE_DEVICE') {
+                const dict = I18N[currentLang];
+                if (spotifyTrackArtist) {
+                    spotifyTrackArtist.textContent = dict.spotifyNoActiveDevice;
+                }
+            }
+        };
     }
 
     if (btnSpotifyNext) {

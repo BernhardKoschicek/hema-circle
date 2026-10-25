@@ -30,6 +30,7 @@ class SpotifyManager {
 
         // Callbacks
         this.onStateChange = null;
+        this.onPlaybackError = null;
 
         this._loadStorage();
     }
@@ -414,18 +415,33 @@ class SpotifyManager {
         const token = await this.getValidToken();
         if (!token) return;
 
+        // Mobile browsers: Unlock audio element via user gesture
+        if (this.player && typeof this.player.activateElement === 'function') {
+            try { this.player.activateElement(); } catch (e) {}
+        }
+
         try {
             const targetDevice = this.selectedDeviceId || this.deviceId;
             const url = targetDevice
                 ? `https://api.spotify.com/v1/me/player/play?device_id=${targetDevice}`
                 : 'https://api.spotify.com/v1/me/player/play';
 
-            await fetch(url, {
+            const res = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            this.isPlaying = true;
-            this._notifyStateChange();
+
+            if (res.status === 204 || res.ok) {
+                this.isPlaying = true;
+                this._notifyStateChange();
+                setTimeout(() => this._fetchCurrentPlayback(), 600);
+            } else if (res.status === 404) {
+                // No active device found or no track queued
+                console.warn('Spotify play: No active device or queued track');
+                if (typeof this.onPlaybackError === 'function') {
+                    this.onPlaybackError('NO_ACTIVE_DEVICE');
+                }
+            }
         } catch (e) {
             console.warn('Spotify play error:', e);
         }
@@ -453,6 +469,9 @@ class SpotifyManager {
     }
 
     async togglePlayPause() {
+        if (this.player && typeof this.player.activateElement === 'function') {
+            try { this.player.activateElement(); } catch (e) {}
+        }
         if (this.isPlaying) {
             await this.pause();
         } else {
