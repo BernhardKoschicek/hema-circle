@@ -2,7 +2,7 @@
  * HEMA Timer - Service Worker for Offline PWA Support
  */
 
-const CACHE_NAME = 'hema-timer-cache-v5';
+const CACHE_NAME = 'hema-timer-cache-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

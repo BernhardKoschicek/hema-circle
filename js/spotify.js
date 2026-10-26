@@ -32,7 +32,10 @@ class SpotifyManager {
         this.onStateChange = null;
         this.onPlaybackError = null;
 
+        this._precomputedAuth = null;
+
         this._loadStorage();
+        this._prepareAuthParams();
     }
 
     _loadStorage() {
@@ -90,45 +93,82 @@ class SpotifyManager {
     // OAuth 2.0 PKCE Authorization
     // -------------------------------------------------------------------------
 
-    async login() {
-        if (!this.clientId) {
-            alert('Bitte gib eine gültige Spotify Client ID ein.');
-            return;
-        }
-
-        const verifier = this._generateRandomString(64);
-        const challenge = await this._generateCodeChallenge(verifier);
-        const state = this._generateRandomString(32);
-
-        // Use localStorage, sessionStorage AND Cookie for maximum cross-context persistence on Android
-        localStorage.setItem('spotify_code_verifier', verifier);
-        localStorage.setItem('spotify_auth_state', state);
-        sessionStorage.setItem('spotify_code_verifier', verifier);
-        sessionStorage.setItem('spotify_auth_state', state);
+    async _prepareAuthParams() {
         try {
-            document.cookie = `spotify_code_verifier=${encodeURIComponent(verifier)}; path=/; max-age=600; SameSite=Lax; Secure`;
-            document.cookie = `spotify_auth_state=${encodeURIComponent(state)}; path=/; max-age=600; SameSite=Lax; Secure`;
-        } catch (e) {}
+            const verifier = this._generateRandomString(64);
+            const challenge = await this._generateCodeChallenge(verifier);
+            const state = this._generateRandomString(32);
+            this._precomputedAuth = { verifier, challenge, state };
+        } catch (e) {
+            console.warn('Could not precompute auth params:', e);
+        }
+    }
 
-        const scopes = [
-            'streaming',
-            'user-read-private',
-            'user-read-playback-state',
-            'user-modify-playback-state',
-            'user-read-currently-playing'
-        ].join(' ');
+    async login() {
+        try {
+            if (!this.clientId) {
+                alert('Bitte gib eine gültige Spotify Client ID ein.');
+                return;
+            }
 
-        const params = new URLSearchParams({
-            client_id: this.clientId,
-            response_type: 'code',
-            redirect_uri: this.getRedirectUri(),
-            scope: scopes,
-            state: state,
-            code_challenge_method: 'S256',
-            code_challenge: challenge
-        });
+            // Use precomputed challenge if available to execute navigation synchronously within the user gesture
+            let auth = this._precomputedAuth;
+            if (!auth) {
+                const verifier = this._generateRandomString(64);
+                const challenge = await this._generateCodeChallenge(verifier);
+                const state = this._generateRandomString(32);
+                auth = { verifier, challenge, state };
+            }
 
-        window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+            const { verifier, challenge, state } = auth;
+
+            // Use localStorage, sessionStorage AND Cookie for maximum cross-context persistence on Android
+            try {
+                localStorage.setItem('spotify_code_verifier', verifier);
+                localStorage.setItem('spotify_auth_state', state);
+                sessionStorage.setItem('spotify_code_verifier', verifier);
+                sessionStorage.setItem('spotify_auth_state', state);
+            } catch (e) {
+                console.warn('Storage write error:', e);
+            }
+
+            try {
+                document.cookie = `spotify_code_verifier=${encodeURIComponent(verifier)}; path=/; max-age=600; SameSite=Lax; Secure`;
+                document.cookie = `spotify_auth_state=${encodeURIComponent(state)}; path=/; max-age=600; SameSite=Lax; Secure`;
+            } catch (e) {}
+
+            const scopes = [
+                'streaming',
+                'user-read-private',
+                'user-read-playback-state',
+                'user-modify-playback-state',
+                'user-read-currently-playing'
+            ].join(' ');
+
+            const redirectUri = this.getRedirectUri();
+
+            const params = new URLSearchParams({
+                client_id: this.clientId,
+                response_type: 'code',
+                redirect_uri: redirectUri,
+                scope: scopes,
+                state: state,
+                code_challenge_method: 'S256',
+                code_challenge: challenge
+            });
+
+            const targetUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+
+            // Reset and precompute next pair for next time
+            this._precomputedAuth = null;
+            this._prepareAuthParams();
+
+            // Direct top-level navigation
+            window.location.assign(targetUrl);
+        } catch (err) {
+            console.error('Spotify login start error:', err);
+            alert('Fehler beim Starten der Spotify-Anmeldung: ' + err.message);
+        }
     }
 
     logout() {
@@ -609,18 +649,38 @@ class SpotifyManager {
 
     _generateRandomString(length) {
         const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-        const values = crypto.getRandomValues(new Uint8Array(length));
-        return Array.from(values).map(x => possible[x % possible.length]).join('');
+        try {
+            const cryptoObj = (typeof window !== 'undefined' && window.crypto) || (typeof crypto !== 'undefined' ? crypto : null);
+            if (cryptoObj && cryptoObj.getRandomValues) {
+                const values = cryptoObj.getRandomValues(new Uint8Array(length));
+                return Array.from(values).map(x => possible[x % possible.length]).join('');
+            }
+        } catch (e) {}
+
+        // Fallback for privacy-hardened browsers (e.g. Brave Shields strict mode)
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return result;
     }
 
     async _generateCodeChallenge(codeVerifier) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(codeVerifier);
-        const digest = await window.crypto.subtle.digest('SHA-256', data);
-        return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '');
+        try {
+            const cryptoObj = (typeof window !== 'undefined' && window.crypto) || (typeof crypto !== 'undefined' ? crypto : null);
+            if (cryptoObj && cryptoObj.subtle && cryptoObj.subtle.digest) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(codeVerifier);
+                const digest = await cryptoObj.subtle.digest('SHA-256', data);
+                return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .replace(/=+$/, '');
+            }
+        } catch (e) {
+            console.warn('SubtleCrypto error:', e);
+        }
+        throw new Error('Web Cryptography API (crypto.subtle) ist in diesem Browser deaktiviert oder nicht verfügbar.');
     }
 }
 
