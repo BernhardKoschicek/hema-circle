@@ -1,8 +1,9 @@
 /**
  * HEMA Timer - Service Worker for Offline PWA Support
+ * Strategy: Network-First with Cache Fallback (ensures fresh updates online & 100% offline capability)
  */
 
-const CACHE_NAME = 'hema-timer-cache-v6';
+const CACHE_NAME = 'hema-timer-cache-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -43,23 +44,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests and skip external APIs (like spotify)
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch in background to update cache
-        fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-          }
-        }).catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(event.request);
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request, { ignoreSearch: true });
+      })
   );
 });

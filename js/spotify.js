@@ -63,7 +63,11 @@ class SpotifyManager {
             if (this.token) localStorage.setItem('hema_spotify_token', this.token);
             if (this.refreshToken) localStorage.setItem('hema_spotify_refresh_token', this.refreshToken);
             localStorage.setItem('hema_spotify_expires_at', String(this.tokenExpiresAt));
-            if (this.selectedDeviceId) localStorage.setItem('hema_spotify_device_id', this.selectedDeviceId);
+            if (this.selectedDeviceId) {
+                localStorage.setItem('hema_spotify_device_id', this.selectedDeviceId);
+            } else {
+                localStorage.removeItem('hema_spotify_device_id');
+            }
             localStorage.setItem('hema_spotify_settings', JSON.stringify(this.settings));
         } catch (e) {
             console.warn('Could not write Spotify storage:', e);
@@ -77,8 +81,6 @@ class SpotifyManager {
     }
 
     getRedirectUri() {
-        // Canonical redirect URI: always strip index.html and ensure clean directory path
-        // This ensures the URI is identical in both normal browser and installed PWA mode
         let path = window.location.pathname;
         if (path.endsWith('index.html')) {
             path = path.slice(0, -'index.html'.length);
@@ -111,7 +113,7 @@ class SpotifyManager {
                 return;
             }
 
-            // Use precomputed challenge if available to execute navigation synchronously within the user gesture
+            // Use precomputed challenge if available so navigation happens synchronously within the tap gesture
             let auth = this._precomputedAuth;
             if (!auth) {
                 const verifier = this._generateRandomString(64);
@@ -122,7 +124,6 @@ class SpotifyManager {
 
             const { verifier, challenge, state } = auth;
 
-            // Use localStorage, sessionStorage AND Cookie for maximum cross-context persistence on Android
             try {
                 localStorage.setItem('spotify_code_verifier', verifier);
                 localStorage.setItem('spotify_auth_state', state);
@@ -132,11 +133,6 @@ class SpotifyManager {
                 console.warn('Storage write error:', e);
             }
 
-            try {
-                document.cookie = `spotify_code_verifier=${encodeURIComponent(verifier)}; path=/; max-age=600; SameSite=Lax; Secure`;
-                document.cookie = `spotify_auth_state=${encodeURIComponent(state)}; path=/; max-age=600; SameSite=Lax; Secure`;
-            } catch (e) {}
-
             const scopes = [
                 'streaming',
                 'user-read-private',
@@ -145,26 +141,20 @@ class SpotifyManager {
                 'user-read-currently-playing'
             ].join(' ');
 
-            const redirectUri = this.getRedirectUri();
-
             const params = new URLSearchParams({
                 client_id: this.clientId,
                 response_type: 'code',
-                redirect_uri: redirectUri,
+                redirect_uri: this.getRedirectUri(),
                 scope: scopes,
                 state: state,
                 code_challenge_method: 'S256',
                 code_challenge: challenge
             });
 
-            const targetUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
-
-            // Reset and precompute next pair for next time
             this._precomputedAuth = null;
             this._prepareAuthParams();
 
-            // Direct top-level navigation
-            window.location.assign(targetUrl);
+            window.location.assign(`https://accounts.spotify.com/authorize?${params.toString()}`);
         } catch (err) {
             console.error('Spotify login start error:', err);
             alert('Fehler beim Starten der Spotify-Anmeldung: ' + err.message);
@@ -178,14 +168,21 @@ class SpotifyManager {
         this.userProfile = null;
         this.currentTrack = null;
         this.isPlaying = false;
+        this.devices = [];
 
         localStorage.removeItem('hema_spotify_token');
         localStorage.removeItem('hema_spotify_refresh_token');
         localStorage.removeItem('hema_spotify_expires_at');
 
+        if (this._pollingInterval) {
+            clearInterval(this._pollingInterval);
+            this._pollingInterval = null;
+        }
+
         if (this.player) {
             try { this.player.disconnect(); } catch (e) {}
             this.player = null;
+            this.deviceId = null;
         }
 
         this._notifyStateChange();
@@ -197,23 +194,12 @@ class SpotifyManager {
         const state = urlParams.get('state');
         const error = urlParams.get('error');
 
-        const getCookie = (name) => {
-            try {
-                const matches = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'));
-                return matches ? decodeURIComponent(matches[1]) : undefined;
-            } catch (e) {
-                return undefined;
-            }
-        };
-
         const cleanUpAuthSession = () => {
-            localStorage.removeItem('spotify_code_verifier');
-            localStorage.removeItem('spotify_auth_state');
-            sessionStorage.removeItem('spotify_code_verifier');
-            sessionStorage.removeItem('spotify_auth_state');
             try {
-                document.cookie = 'spotify_code_verifier=; path=/; max-age=0; SameSite=Lax; Secure';
-                document.cookie = 'spotify_auth_state=; path=/; max-age=0; SameSite=Lax; Secure';
+                localStorage.removeItem('spotify_code_verifier');
+                localStorage.removeItem('spotify_auth_state');
+                sessionStorage.removeItem('spotify_code_verifier');
+                sessionStorage.removeItem('spotify_auth_state');
             } catch (e) {}
         };
 
@@ -226,10 +212,9 @@ class SpotifyManager {
         }
 
         if (code) {
-            const verifier = localStorage.getItem('spotify_code_verifier') || sessionStorage.getItem('spotify_code_verifier') || getCookie('spotify_code_verifier');
-            const savedState = localStorage.getItem('spotify_auth_state') || sessionStorage.getItem('spotify_auth_state') || getCookie('spotify_auth_state');
+            const verifier = localStorage.getItem('spotify_code_verifier') || sessionStorage.getItem('spotify_code_verifier');
+            const savedState = localStorage.getItem('spotify_auth_state') || sessionStorage.getItem('spotify_auth_state');
 
-            // CSRF protection: state must match
             if (savedState && state !== savedState) {
                 console.error('Spotify Auth CSRF detected: state parameter mismatch');
                 cleanUpAuthSession();
@@ -239,10 +224,10 @@ class SpotifyManager {
             }
 
             if (!verifier) {
-                console.error('No code_verifier found in storage or cookie');
+                console.error('No code_verifier found in storage');
                 cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
-                alert('Spotify Verifizierungs-Schlüssel (PKCE) fehlt. Wenn du eine installierte App (PWA) nutzt, öffne bitte einmal die Seite direkt im mobilen Chrome-Browser und verbinde Spotify dort.');
+                alert('Spotify Verifizierungs-Schlüssel (PKCE) fehlt. Bitte verbinde Spotify erneut.');
                 return false;
             }
 
@@ -343,10 +328,11 @@ class SpotifyManager {
             console.warn('Could not fetch user profile:', e);
         }
 
-        // 2. Fetch available devices (Spotify Connect)
+        // 2. Fetch available devices (Spotify Connect) and current playback
         await this.refreshDevices();
+        await this._fetchCurrentPlayback();
 
-        // 3. Setup Web Playback SDK if loaded
+        // 3. Setup Web Playback SDK if loaded and authenticated
         this._initWebPlaybackSdk();
 
         // 4. Poll currently playing track periodically
@@ -356,19 +342,19 @@ class SpotifyManager {
     }
 
     _initWebPlaybackSdk() {
-        if (!window.Spotify || this.player) return;
+        // Only initialize when authenticated and SDK is ready
+        if (!window.Spotify || this.player || !this.token) return;
 
         const player = new window.Spotify.Player({
             name: 'HEMA Circuit Timer',
             getOAuthToken: async cb => {
                 const token = await this.getValidToken();
-                cb(token);
+                if (token) cb(token);
             },
             volume: this.normalVolume
         });
 
         player.addListener('ready', ({ device_id }) => {
-            console.log('Spotify Web Player ready with Device ID:', device_id);
             this.deviceId = device_id;
             if (!this.selectedDeviceId) {
                 this.selectedDeviceId = device_id;
@@ -377,8 +363,11 @@ class SpotifyManager {
             this._notifyStateChange();
         });
 
-        player.addListener('not_ready', ({ device_id }) => {
-            console.log('Spotify Web Player offline:', device_id);
+        player.addListener('not_ready', () => {
+            if (this.selectedDeviceId === this.deviceId) {
+                this.selectedDeviceId = null;
+            }
+            this.deviceId = null;
         });
 
         player.addListener('player_state_changed', state => {
@@ -395,14 +384,20 @@ class SpotifyManager {
             this._notifyStateChange();
         });
 
-        player.addListener('initialization_error', ({ message }) => console.warn('Spotify Init Error:', message));
-        player.addListener('authentication_error', ({ message }) => {
-            console.warn('Spotify Auth Error:', message);
-            this.logout();
-        });
-        player.addListener('account_error', ({ message }) => {
-            console.warn('Spotify Premium Required for in-browser playback:', message);
-        });
+        // Mobile browsers often lack Widevine DRM or block 3rd-party storage in Web Playback SDK.
+        // In that case, disable only the in-browser player and continue using Spotify Connect API.
+        const cleanupLocalPlayer = (reason) => {
+            console.warn('Spotify Web Playback SDK unavailable (using Spotify Connect API instead):', reason);
+            try { player.disconnect(); } catch (e) {}
+            if (this.player === player) {
+                this.player = null;
+                this.deviceId = null;
+            }
+        };
+
+        player.addListener('initialization_error', ({ message }) => cleanupLocalPlayer(message));
+        player.addListener('authentication_error', ({ message }) => cleanupLocalPlayer(message));
+        player.addListener('account_error', ({ message }) => cleanupLocalPlayer(message));
 
         player.connect();
         this.player = player;
@@ -420,11 +415,27 @@ class SpotifyManager {
                 const data = await res.json();
                 this.devices = data.devices || [];
 
-                // If active device exists and none selected yet, choose it
-                const active = this.devices.find(d => d.is_active);
-                if (active && !this.selectedDeviceId) {
-                    this.selectedDeviceId = active.id;
+                // Verify if previously selected device is still available
+                const selectedExists = this.selectedDeviceId && (
+                    this.selectedDeviceId === this.deviceId ||
+                    this.devices.some(d => d.id === this.selectedDeviceId)
+                );
+
+                if (!selectedExists) {
+                    const active = this.devices.find(d => d.is_active);
+                    if (active) {
+                        this.selectedDeviceId = active.id;
+                    } else if (this.devices.length > 0) {
+                        this.selectedDeviceId = this.devices[0].id;
+                    } else if (this.deviceId) {
+                        this.selectedDeviceId = this.deviceId;
+                    } else {
+                        this.selectedDeviceId = null;
+                    }
+                    this._saveStorage();
                 }
+
+                this._notifyStateChange();
             }
         } catch (e) {
             console.warn('Could not fetch devices:', e);
@@ -462,8 +473,6 @@ class SpotifyManager {
                     this.selectedDeviceId = data.device.id;
                 }
                 this._notifyStateChange();
-            } else if (res.status === 204) {
-                // No active playback
             }
         } catch (e) {
             // Ignore polling network blips
@@ -478,12 +487,16 @@ class SpotifyManager {
         const token = await this.getValidToken();
         if (!token) return;
 
-        // Mobile browsers: Unlock audio element via user gesture
+        // Unlock audio element if in-browser player is active
         if (this.player && typeof this.player.activateElement === 'function') {
             try { this.player.activateElement(); } catch (e) {}
         }
 
         try {
+            if (!this.selectedDeviceId && !this.deviceId) {
+                await this.refreshDevices();
+            }
+
             const targetDevice = this.selectedDeviceId || this.deviceId;
             const url = targetDevice
                 ? `https://api.spotify.com/v1/me/player/play?device_id=${targetDevice}`
@@ -498,9 +511,9 @@ class SpotifyManager {
                 this.isPlaying = true;
                 this._notifyStateChange();
                 setTimeout(() => this._fetchCurrentPlayback(), 600);
-            } else if (res.status === 404) {
-                // No active device found or no track queued
-                console.warn('Spotify play: No active device or queued track');
+            } else if (res.status === 404 || res.status === 403) {
+                // Selected device may have gone to sleep; refresh device list
+                await this.refreshDevices();
                 if (typeof this.onPlaybackError === 'function') {
                     this.onPlaybackError('NO_ACTIVE_DEVICE');
                 }
@@ -589,7 +602,6 @@ class SpotifyManager {
     async onPhaseStarted(phase) {
         if (!this.settings.syncWithTimer || !this.token) return;
 
-        // Restore normal volume when new phase begins
         if (this.isDucked) {
             await this.setVolume(this.normalVolume);
             this.isDucked = false;
@@ -601,7 +613,6 @@ class SpotifyManager {
             if (this.settings.pauseOnRest) {
                 await this.pause();
             } else {
-                // Lower volume during rest instead of full pause
                 await this.setVolume(this.duckedVolume);
             }
         }
@@ -610,7 +621,6 @@ class SpotifyManager {
     async onWarningCountdown(secondsLeft) {
         if (!this.settings.duckOnWarning || !this.token) return;
 
-        // Duck volume 5 seconds before phase end so countdown beeps are clearly audible
         if (!this.isDucked && secondsLeft <= 5) {
             this.isDucked = true;
             await this.setVolume(this.duckedVolume);
@@ -657,7 +667,6 @@ class SpotifyManager {
             }
         } catch (e) {}
 
-        // Fallback for privacy-hardened browsers (e.g. Brave Shields strict mode)
         let result = '';
         for (let i = 0; i < length; i++) {
             result += possible.charAt(Math.floor(Math.random() * possible.length));
@@ -680,7 +689,7 @@ class SpotifyManager {
         } catch (e) {
             console.warn('SubtleCrypto error:', e);
         }
-        throw new Error('Web Cryptography API (crypto.subtle) ist in diesem Browser deaktiviert oder nicht verfügbar.');
+        throw new Error('Web Cryptography API (crypto.subtle) ist in diesem Browser nicht verfügbar.');
     }
 }
 
@@ -688,7 +697,7 @@ window.spotifyManager = new SpotifyManager();
 
 // Callback required by official Spotify Web Playback SDK
 window.onSpotifyWebPlaybackSDKReady = () => {
-    if (window.spotifyManager) {
+    if (window.spotifyManager && window.spotifyManager.token && !window.location.search.includes('code=')) {
         window.spotifyManager._initWebPlaybackSdk();
     }
 };

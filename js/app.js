@@ -98,7 +98,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             shareTextTotalTime: 'Gesamtdauer',
             titleCloseSettings: 'Einstellungen schließen',
             btnConnectShort: 'Verbinden',
-            spotifyNoActiveDevice: 'Tippe um Song in Spotify-App zu starten!'
+            spotifyNoActiveDevice: 'Tippe um Song in Spotify-App zu starten!',
+            noDevicesFound: 'Kein aktives Spotify-Gerät gefunden (Spotify-App öffnen)'
         },
         en: {
             brandTitle: 'HEMA TIMER',
@@ -190,7 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             shareTextTotalTime: 'total duration',
             titleCloseSettings: 'Close settings',
             btnConnectShort: 'Connect',
-            spotifyNoActiveDevice: 'Tap to start track in Spotify App!'
+            spotifyNoActiveDevice: 'Tap to start track in Spotify App!',
+            noDevicesFound: 'No active Spotify device found (open Spotify App)'
         }
     };
 
@@ -636,17 +638,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             // Populate Device List
-            if (spotify.devices && spotify.devices.length > 0) {
+            if (selectSpotifyDevice) {
                 selectSpotifyDevice.innerHTML = '';
-                spotify.devices.forEach(dev => {
+                if (spotify.devices && spotify.devices.length > 0) {
+                    spotify.devices.forEach(dev => {
+                        const opt = document.createElement('option');
+                        opt.value = dev.id;
+                        opt.textContent = `${dev.name} (${dev.type})${dev.is_active ? dict.deviceActiveLabel : ''}`;
+                        if (dev.id === spotify.selectedDeviceId) {
+                            opt.selected = true;
+                        }
+                        selectSpotifyDevice.appendChild(opt);
+                    });
+                } else {
                     const opt = document.createElement('option');
-                    opt.value = dev.id;
-                    opt.textContent = `${dev.name} (${dev.type})${dev.is_active ? dict.deviceActiveLabel : ''}`;
-                    if (dev.id === spotify.selectedDeviceId) {
-                        opt.selected = true;
-                    }
+                    opt.value = '';
+                    opt.textContent = dict.noDevicesFound;
                     selectSpotifyDevice.appendChild(opt);
-                });
+                }
             }
         } else {
             spotifyStatusBadge.className = 'badge-disconnected';
@@ -940,10 +949,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (spotifyWidgetInfo) {
         spotifyWidgetInfo.addEventListener('click', () => {
             if (!spotify.token) {
-                // Direct login with Spotify
                 spotify.login();
             } else {
-                openSettings('spotify-settings-card');
+                spotify.togglePlayPause();
             }
         });
     }
