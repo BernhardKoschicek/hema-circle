@@ -100,9 +100,15 @@ class SpotifyManager {
         const challenge = await this._generateCodeChallenge(verifier);
         const state = this._generateRandomString(32);
 
-        // Use localStorage so the verifier survives external app switches and PWA relaunches on mobile
+        // Use localStorage, sessionStorage AND Cookie for maximum cross-context persistence on Android
         localStorage.setItem('spotify_code_verifier', verifier);
         localStorage.setItem('spotify_auth_state', state);
+        sessionStorage.setItem('spotify_code_verifier', verifier);
+        sessionStorage.setItem('spotify_auth_state', state);
+        try {
+            document.cookie = `spotify_code_verifier=${encodeURIComponent(verifier)}; path=/; max-age=600; SameSite=Lax; Secure`;
+            document.cookie = `spotify_auth_state=${encodeURIComponent(state)}; path=/; max-age=600; SameSite=Lax; Secure`;
+        } catch (e) {}
 
         const scopes = [
             'streaming',
@@ -151,36 +157,52 @@ class SpotifyManager {
         const state = urlParams.get('state');
         const error = urlParams.get('error');
 
+        const getCookie = (name) => {
+            try {
+                const matches = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + '=([^;]*)'));
+                return matches ? decodeURIComponent(matches[1]) : undefined;
+            } catch (e) {
+                return undefined;
+            }
+        };
+
         const cleanUpAuthSession = () => {
             localStorage.removeItem('spotify_code_verifier');
             localStorage.removeItem('spotify_auth_state');
             sessionStorage.removeItem('spotify_code_verifier');
             sessionStorage.removeItem('spotify_auth_state');
+            try {
+                document.cookie = 'spotify_code_verifier=; path=/; max-age=0; SameSite=Lax; Secure';
+                document.cookie = 'spotify_auth_state=; path=/; max-age=0; SameSite=Lax; Secure';
+            } catch (e) {}
         };
 
         if (error) {
             console.error('Spotify Auth Error:', error);
             cleanUpAuthSession();
             window.history.replaceState({}, document.title, window.location.pathname);
+            alert('Spotify Anmeldung fehlgeschlagen / abgebrochen: ' + error);
             return false;
         }
 
         if (code) {
-            const verifier = localStorage.getItem('spotify_code_verifier') || sessionStorage.getItem('spotify_code_verifier');
-            const savedState = localStorage.getItem('spotify_auth_state') || sessionStorage.getItem('spotify_auth_state');
+            const verifier = localStorage.getItem('spotify_code_verifier') || sessionStorage.getItem('spotify_code_verifier') || getCookie('spotify_code_verifier');
+            const savedState = localStorage.getItem('spotify_auth_state') || sessionStorage.getItem('spotify_auth_state') || getCookie('spotify_auth_state');
 
             // CSRF protection: state must match
             if (savedState && state !== savedState) {
                 console.error('Spotify Auth CSRF detected: state parameter mismatch');
                 cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
+                alert('Spotify Sicherheitsprüfung fehlgeschlagen (State Mismatch). Bitte erneut versuchen.');
                 return false;
             }
 
             if (!verifier) {
-                console.error('No code_verifier found in storage');
+                console.error('No code_verifier found in storage or cookie');
                 cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
+                alert('Spotify Verifizierungs-Schlüssel (PKCE) fehlt. Wenn du eine installierte App (PWA) nutzt, öffne bitte einmal die Seite direkt im mobilen Chrome-Browser und verbinde Spotify dort.');
                 return false;
             }
 
@@ -219,6 +241,7 @@ class SpotifyManager {
                 console.error('Error during token exchange:', err);
                 cleanUpAuthSession();
                 window.history.replaceState({}, document.title, window.location.pathname);
+                alert('Spotify Token-Austausch fehlgeschlagen: ' + err.message);
                 return false;
             }
         }

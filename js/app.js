@@ -98,11 +98,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             shareTextTotalTime: 'Gesamtdauer',
             titleCloseSettings: 'Einstellungen schließen',
             btnConnectShort: 'Verbinden',
-            spotifyGuideIntro: '💡 <strong>So nutzt du Musik im Fechttraining:</strong>',
-            spotifyGuideStep1: '1. Einmalig mit deinem Spotify-Konto verbinden.',
-            spotifyGuideStep2: '2. Starte deine Trainings-Playlist in der Spotify-App auf deinem Handy.',
-            spotifyGuideStep3: '3. Der Timer steuert die Musik: Auto-Pause in den Rundenpausen & Ducking beim Countdown!',
-            btnOpenSpotifyApp: '📱 Spotify-App öffnen',
             spotifyNoActiveDevice: 'Tippe um Song in Spotify-App zu starten!'
         },
         en: {
@@ -195,11 +190,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             shareTextTotalTime: 'total duration',
             titleCloseSettings: 'Close settings',
             btnConnectShort: 'Connect',
-            spotifyGuideIntro: '💡 <strong>How to use music in fencing training:</strong>',
-            spotifyGuideStep1: '1. Connect once with your Spotify account.',
-            spotifyGuideStep2: '2. Start your workout playlist in the Spotify app on your phone.',
-            spotifyGuideStep3: '3. The timer controls playback: Auto-pause during rest & ducking on countdown!',
-            btnOpenSpotifyApp: '📱 Open Spotify App',
             spotifyNoActiveDevice: 'Tap to start track in Spotify App!'
         }
     };
@@ -985,6 +975,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         };
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'hema_spotify_token' && e.newValue) {
+                spotify._loadStorage();
+                spotify.init();
+            } else if (e.key === 'hema_spotify_token' && !e.newValue) {
+                spotify.logout();
+            }
+        });
     }
 
     if (btnSpotifyNext) {

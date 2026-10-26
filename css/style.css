@@ -572,44 +572,6 @@ body.theme-idle .btn-primary {
     letter-spacing: 0.02em;
 }
 
-.spotify-guide-box {
-    background: rgba(29, 185, 84, 0.08);
-    border: 1px solid rgba(29, 185, 84, 0.25);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.spotify-guide-text {
-    font-size: 0.82rem;
-    color: var(--text-primary);
-    line-height: 1.45;
-}
-
-.spotify-guide-list {
-    margin: 6px 0 0 18px;
-    padding: 0;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-.spotify-guide-list li {
-    margin-bottom: 4px;
-}
-
-.btn-open-spotify {
-    text-align: center;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    align-self: flex-start;
-}
-
 /* --------------------------------------------------------------------------
    Settings Drawer / Bottom Sheet
    -------------------------------------------------------------------------- */
